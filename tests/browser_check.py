@@ -93,7 +93,17 @@ with sync_playwright() as p:
     admin.locator('[data-action="undo"]').click()
     assert admin.locator('.score-number').first.inner_text()=='0'
     admin.locator('#presenter-quick-controls [data-action="mode-r1"]').click()
+    assert admin.locator('.r1-option').count()==4
+    # Cada alternativa deve virar ao ser selecionada e sincronizar o estado.
+    for i in range(4):
+        admin.locator(f'[data-r1-option="{i}"]').click()
+        assert admin.locator('.r1-option.is-selected').count()==1
+        assert admin.locator('.r1-option.is-flipped').count()==1
+        assert admin.locator('.r1-option.is-selected').get_attribute('data-r1-option')==str(i)
     admin.locator('[data-action="show-r1"]').click()
+    assert admin.locator('.r1-option.is-flipped').count()==4
+    assert admin.locator('.r1-option.correct').count()==1
+    assert admin.locator('.r1-option.muted').count()==3
     admin.locator('[data-action="award1"]').click()
     assert admin.locator('.score-number').first.inner_text()=='10'
     admin.locator('#presenter-quick-controls [data-action="next"]').click()
