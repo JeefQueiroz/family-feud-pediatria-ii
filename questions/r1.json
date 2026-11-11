@@ -1,0 +1,67 @@
+[
+  {
+    "id": "r1-01",
+    "title": "Pesquisa de irritação peritoneal",
+    "prompt": "Qual manobra pesquisa dor à descompressão brusca em criança com suspeita de irritação peritoneal?",
+    "options": [
+      "Sinal de Giordano",
+      "Manobra de Schuster",
+      "Sinal de Blumberg",
+      "Sinal de Murphy"
+    ],
+    "correct": 2,
+    "explanation": "Sinal de Blumberg: dor mais intensa à descompressão do que à compressão sugere irritação peritoneal. Em crianças, evitar repetir manobras dolorosas; interpretar conforme contexto clínico."
+  },
+  {
+    "id": "r1-02",
+    "title": "Hepatimetria",
+    "prompt": "Como avaliar o tamanho do fígado por percussão?",
+    "options": [
+      "Percutir exclusivamente hipocôndrio esquerdo",
+      "Delimitar limites superior e inferior da macicez e medir a distância",
+      "Fazer apenas palpação profunda do hipocôndrio direito",
+      "Percutir região umbilical até achar macicez"
+    ],
+    "correct": 1,
+    "explanation": "Usualmente na linha hemiclavicular direita: marcar limite superior onde som pulmonar vira macicez, inferior onde som abdominal vira macicez; medir distância. Referências devem ser pediátricas."
+  },
+  {
+    "id": "r1-03",
+    "title": "Pesquisa do baço",
+    "prompt": "Qual técnica pode facilitar a palpação de um baço discretamente aumentado?",
+    "options": [
+      "Manobra de Schuster em decúbito lateral direito",
+      "Decúbito ventral e palpação no hipocôndrio direito",
+      "Percussão da fossa ilíaca direita sem palpação",
+      "Palpação superficial epigástrica na expiração"
+    ],
+    "correct": 0,
+    "explanation": "Manobra de Schuster: decúbito lateral direito, com posicionamento apropriado dos membros; palpação em direção ao rebordo costal esquerdo durante inspiração. Não determinar causa apenas pela palpação."
+  },
+  {
+    "id": "r1-04",
+    "title": "Pesquisa de ascite",
+    "prompt": "Qual manobra pode investigar líquido livre na cavidade peritoneal?",
+    "options": [
+      "Sinal de Rovsing",
+      "Sinal de Murphy",
+      "Sinal do psoas",
+      "Pesquisa de macicez móvel"
+    ],
+    "correct": 3,
+    "explanation": "A mudança da região de macicez com a alteração do decúbito sugere líquido livre (ascite), devendo ser interpretada com outros achados."
+  },
+  {
+    "id": "r1-05",
+    "title": "Avaliação do trato urinário",
+    "prompt": "Qual manobra pesquisa dor à punho-percussão no ângulo costovertebral?",
+    "options": [
+      "Sinal de Blumberg",
+      "Sinal de Giordano",
+      "Manobra de Schuster",
+      "Sinal de Murphy"
+    ],
+    "correct": 1,
+    "explanation": "Sinal de Giordano: percussão suave no ângulo costovertebral. Dor pode apoiar suspeita de acometimento renal, mas não confirma pielonefrite isoladamente."
+  }
+]

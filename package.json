@@ -1,0 +1,11 @@
+{
+  "name":"family-feud-pediatria-ufmg",
+  "version":"1.0.0",
+  "private":true,
+  "description":"Dinâmica de monitoria de Pediatria II — jogo de respostas e Quem quer ser um R1",
+  "scripts":{
+    "build":"python3 scripts/build_questions.py",
+    "test":"python3 -m unittest discover -s tests -v",
+    "dev":"python3 -m http.server 4173 -d public"
+  }
+}

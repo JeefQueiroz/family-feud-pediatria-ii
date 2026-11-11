@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "pointsPerHit": 10,
+  "rounds": [
+    {
+      "id": "scv-anamnese",
+      "block": "02",
+      "title": "Anamnese cardiovascular",
+      "question": "Quais informações não podem faltar ao investigar uma queixa cardiovascular em uma criança escolar?",
+      "answers": [
+        {
+          "label": "Palpitações e taquicardia",
+          "detail": "Início, duração, frequência, regularidade e início/término dos episódios.",
+          "points": 10
+        },
+        {
+          "label": "Cianose",
+          "detail": "Início, duração, localização central ou periférica, frequência e desencadeantes.",
+          "points": 10
+        },
+        {
+          "label": "Dor precordial",
+          "detail": "Localização, características, duração e relação com esforço físico.",
+          "points": 10
+        },
+        {
+          "label": "Síncope e pré-síncope",
+          "detail": "Circunstâncias, duração, sintomas associados e relação com exercício.",
+          "points": 10
+        },
+        {
+          "label": "Cansaço e esforço",
+          "detail": "Dispneia, fadiga, intolerância ao esforço e comparação com crianças da mesma idade.",
+          "points": 10
+        },
+        {
+          "label": "Antecedentes pessoais",
+          "detail": "Doenças prévias, internações, cirurgias e medicamentos em uso.",
+          "points": 10
+        },
+        {
+          "label": "Exames prévios",
+          "detail": "ECG, ecocardiograma e outros exames cardiovasculares, incluindo resultados.",
+          "points": 10
+        },
+        {
+          "label": "História gestacional e familiar",
+          "detail": "Intercorrências gestacionais/nascimento, cardiopatias, arritmias e morte súbita familiar.",
+          "points": 10
+        }
+      ],
+      "notes": "Sinal de alerta: síncope ao exercício, dor torácica de esforço, palpitação com síncope, cianose central, intolerância desproporcional, redução funcional, antecedentes relevantes ou morte súbita familiar. Palpitação é uma percepção subjetiva; taquicardia exige frequência cardíaca medida e interpretada conforme idade e contexto."
+    },
+    {
+      "id": "sgi-anamnese",
+      "block": "03",
+      "title": "Anamnese gastrointestinal",
+      "question": "Diante de dor abdominal em uma criança escolar, o que investigar na anamnese?",
+      "answers": [
+        {
+          "label": "Caracterização da dor",
+          "detail": "Início, duração, localização, irradiação, intensidade, frequência e evolução.",
+          "points": 10
+        },
+        {
+          "label": "Desencadeantes e alívio",
+          "detail": "Relação com alimentos, evacuação, esforço, sono e situações de estresse.",
+          "points": 10
+        },
+        {
+          "label": "Hábito intestinal",
+          "detail": "Frequência, consistência (Bristol), esforço e retenção de fezes.",
+          "points": 10
+        },
+        {
+          "label": "Alterações das fezes",
+          "detail": "Diarreia, muco, sangue, fezes enegrecidas e evacuações noturnas.",
+          "points": 10
+        },
+        {
+          "label": "Náuseas e vômitos",
+          "detail": "Frequência, conteúdo, bile ou sangue e relação com alimentação.",
+          "points": 10
+        },
+        {
+          "label": "Outros sintomas digestivos",
+          "detail": "Distensão, flatulência, pirose, regurgitação, disfagia e odinofagia.",
+          "points": 10
+        },
+        {
+          "label": "Alimentação e crescimento",
+          "detail": "Apetite, seletividade, dieta, água, perda de peso e curva de crescimento.",
+          "points": 10
+        },
+        {
+          "label": "Sintomas e antecedentes",
+          "detail": "Febre, sintomas urinários, manifestações extraintestinais, doenças, medicamentos e história familiar.",
+          "points": 10
+        }
+      ],
+      "notes": "Alertas: perda de peso/desaceleração do crescimento, febre inexplicada, dor persistente ou noturna, diarreia crônica/noturna, sangue nas fezes, vômitos persistentes/biliosos/com sangue, dor localizada persistente, disfagia/odinofagia ou exame anormal. Considerar constipação e transtornos funcionais, mas não presumir causa funcional sem história e exame."
+    },
+    {
+      "id": "scv-exame",
+      "block": "04",
+      "title": "Exame físico cardiovascular",
+      "question": "Quais etapas e elementos compõem o exame cardiovascular do escolar?",
+      "answers": [
+        {
+          "label": "Inspeção geral",
+          "detail": "Estado geral, cor da pele e mucosas, cianose, palidez, padrão respiratório e desconforto.",
+          "points": 10
+        },
+        {
+          "label": "Sinais vitais",
+          "detail": "Frequência cardíaca/respiratória, pressão arterial e saturação de O₂, interpretadas pela idade.",
+          "points": 10
+        },
+        {
+          "label": "Perfusão periférica",
+          "detail": "Temperatura das extremidades e tempo de enchimento capilar.",
+          "points": 10
+        },
+        {
+          "label": "Avaliação dos pulsos",
+          "detail": "Frequência, ritmo, amplitude, simetria e pulsos femorais.",
+          "points": 10
+        },
+        {
+          "label": "Inspeção do precórdio",
+          "detail": "Abaulamentos, retrações e impulsões visíveis.",
+          "points": 10
+        },
+        {
+          "label": "Palpação do precórdio",
+          "detail": "Ictus cordis, impulsões e pesquisa de frêmitos.",
+          "points": 10
+        },
+        {
+          "label": "Ausculta cardíaca",
+          "detail": "Frequência, ritmo, bulhas, sopros, cliques e outros ruídos.",
+          "points": 10
+        },
+        {
+          "label": "Caracterizar o sopro",
+          "detail": "Foco, fase, intensidade, duração, timbre, irradiação e variação com posição.",
+          "points": 10
+        }
+      ],
+      "notes": "Pulsos femorais diminuídos em relação aos superiores podem sugerir coarctação. Pressão arterial pediátrica depende de idade, sexo e estatura. Frêmito é vibração palpável associada ao fluxo turbulento. Interpretar toda a semiologia no contexto clínico."
+    },
+    {
+      "id": "sopro-inocente",
+      "block": "05",
+      "title": "Sopro inocente",
+      "question": "Quais características favorecem a hipótese de sopro inocente?",
+      "answers": [
+        {
+          "label": "Geralmente sistólico",
+          "detail": "Ocorre na sístole, não na diástole.",
+          "points": 10
+        },
+        {
+          "label": "Curta duração",
+          "detail": "Tipicamente curto.",
+          "points": 10
+        },
+        {
+          "label": "Baixa intensidade",
+          "detail": "Em geral até grau II/VI.",
+          "points": 10
+        },
+        {
+          "label": "Pouca irradiação",
+          "detail": "Mais localizado, com pouca ou nenhuma irradiação.",
+          "points": 10
+        },
+        {
+          "label": "Sem frêmito",
+          "detail": "Não costuma produzir frêmito palpável.",
+          "points": 10
+        },
+        {
+          "label": "Bulhas sem alterações",
+          "detail": "Sem cliques ou alterações patológicas das bulhas.",
+          "points": 10
+        },
+        {
+          "label": "Varia com posição",
+          "detail": "Pode mudar com posição corporal ou respiração.",
+          "points": 10
+        },
+        {
+          "label": "Criança assintomática",
+          "detail": "Sem sintomas ou achados indicativos de doença cardíaca.",
+          "points": 10
+        }
+      ],
+      "notes": "Um sopro não é classificado apenas pelo foco de ausculta. História, sintomas, pulsos e demais achados do exame importam."
+    },
+    {
+      "id": "sopro-patologico",
+      "block": "05",
+      "title": "Sopro potencialmente patológico",
+      "question": "Quais achados aumentam a suspeita de sopro patológico?",
+      "answers": [
+        {
+          "label": "Sopro diastólico",
+          "detail": "Sopros diastólicos exigem atenção.",
+          "points": 10
+        },
+        {
+          "label": "Sopro holossistólico",
+          "detail": "Ocorre ao longo de toda a sístole.",
+          "points": 10
+        },
+        {
+          "label": "Intensidade elevada",
+          "detail": "Particularmente grau III/VI ou superior.",
+          "points": 10
+        },
+        {
+          "label": "Timbre rude/áspero",
+          "detail": "Qualidade acústica sugestiva de possível anormalidade.",
+          "points": 10
+        },
+        {
+          "label": "Irradiação significativa",
+          "detail": "Especialmente para dorso ou região cervical.",
+          "points": 10
+        },
+        {
+          "label": "Presença de frêmito",
+          "detail": "Vibração palpável associada ao sopro.",
+          "points": 10
+        },
+        {
+          "label": "Ruídos anormais",
+          "detail": "Cliques, alteração de B2 ou outros ruídos patológicos.",
+          "points": 10
+        },
+        {
+          "label": "Sintomas associados",
+          "detail": "Síncope, cianose, intolerância ao esforço, pulsos anormais ou outras alterações.",
+          "points": 10
+        }
+      ],
+      "notes": "Sinais clínicos e alterações acústicas devem ser interpretados conjuntamente. Suspeita de sopro patológico pode exigir avaliação especializada e consideração de ecocardiograma."
+    },
+    {
+      "id": "sgi-exame",
+      "block": "06",
+      "title": "Exame físico gastrointestinal",
+      "question": "Quais etapas compõem o exame físico abdominal e o que avaliamos?",
+      "answers": [
+        {
+          "label": "Inspeção",
+          "detail": "Formato, simetria, distensão, cicatrizes, circulação colateral, pele, abaulamentos e movimentos.",
+          "points": 10
+        },
+        {
+          "label": "Ausculta",
+          "detail": "Ruídos hidroaéreos e sopros vasculares quando indicado.",
+          "points": 10
+        },
+        {
+          "label": "Percussão",
+          "detail": "Timpanismo/macicez, hepatimetria, Traube e investigação de ascite.",
+          "points": 10
+        },
+        {
+          "label": "Palpação superficial",
+          "detail": "Dor, hipersensibilidade, defesa e rigidez.",
+          "points": 10
+        },
+        {
+          "label": "Palpação profunda",
+          "detail": "Massas, vísceras e pontos dolorosos.",
+          "points": 10
+        },
+        {
+          "label": "Visceromegalias",
+          "detail": "Pesquisa de fígado, baço e rins.",
+          "points": 10
+        },
+        {
+          "label": "Manobras específicas",
+          "detail": "Irritação peritoneal, apendicite, colecistite, ascite e rim, conforme hipótese.",
+          "points": 10
+        }
+      ],
+      "notes": "Ordem: inspeção → ausculta → percussão → palpação. Acolher a criança, aquecer as mãos e começar longe da região dolorosa. Baço palpável em escolar exige correlação clínica e investigação quando indicado."
+    }
+  ],
+  "r1": [
+    {
+      "id": "r1-01",
+      "title": "Pesquisa de irritação peritoneal",
+      "prompt": "Qual manobra pesquisa dor à descompressão brusca em criança com suspeita de irritação peritoneal?",
+      "options": [
+        "Sinal de Giordano",
+        "Manobra de Schuster",
+        "Sinal de Blumberg",
+        "Sinal de Murphy"
+      ],
+      "correct": 2,
+      "explanation": "Sinal de Blumberg: dor mais intensa à descompressão do que à compressão sugere irritação peritoneal. Em crianças, evitar repetir manobras dolorosas; interpretar conforme contexto clínico.",
+      "points": 10
+    },
+    {
+      "id": "r1-02",
+      "title": "Hepatimetria",
+      "prompt": "Como avaliar o tamanho do fígado por percussão?",
+      "options": [
+        "Percutir exclusivamente hipocôndrio esquerdo",
+        "Delimitar limites superior e inferior da macicez e medir a distância",
+        "Fazer apenas palpação profunda do hipocôndrio direito",
+        "Percutir região umbilical até achar macicez"
+      ],
+      "correct": 1,
+      "explanation": "Usualmente na linha hemiclavicular direita: marcar limite superior onde som pulmonar vira macicez, inferior onde som abdominal vira macicez; medir distância. Referências devem ser pediátricas.",
+      "points": 10
+    },
+    {
+      "id": "r1-03",
+      "title": "Pesquisa do baço",
+      "prompt": "Qual técnica pode facilitar a palpação de um baço discretamente aumentado?",
+      "options": [
+        "Manobra de Schuster em decúbito lateral direito",
+        "Decúbito ventral e palpação no hipocôndrio direito",
+        "Percussão da fossa ilíaca direita sem palpação",
+        "Palpação superficial epigástrica na expiração"
+      ],
+      "correct": 0,
+      "explanation": "Manobra de Schuster: decúbito lateral direito, com posicionamento apropriado dos membros; palpação em direção ao rebordo costal esquerdo durante inspiração. Não determinar causa apenas pela palpação.",
+      "points": 10
+    },
+    {
+      "id": "r1-04",
+      "title": "Pesquisa de ascite",
+      "prompt": "Qual manobra pode investigar líquido livre na cavidade peritoneal?",
+      "options": [
+        "Sinal de Rovsing",
+        "Sinal de Murphy",
+        "Sinal do psoas",
+        "Pesquisa de macicez móvel"
+      ],
+      "correct": 3,
+      "explanation": "A mudança da região de macicez com a alteração do decúbito sugere líquido livre (ascite), devendo ser interpretada com outros achados.",
+      "points": 10
+    },
+    {
+      "id": "r1-05",
+      "title": "Avaliação do trato urinário",
+      "prompt": "Qual manobra pesquisa dor à punho-percussão no ângulo costovertebral?",
+      "options": [
+        "Sinal de Blumberg",
+        "Sinal de Giordano",
+        "Manobra de Schuster",
+        "Sinal de Murphy"
+      ],
+      "correct": 1,
+      "explanation": "Sinal de Giordano: percussão suave no ângulo costovertebral. Dor pode apoiar suspeita de acometimento renal, mas não confirma pielonefrite isoladamente.",
+      "points": 10
+    }
+  ]
+}

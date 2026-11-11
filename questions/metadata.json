@@ -1,0 +1,79 @@
+{
+  "scv-anamnese": {
+    "notes": "Sinal de alerta: síncope ao exercício, dor torácica de esforço, palpitação com síncope, cianose central, intolerância desproporcional, redução funcional, antecedentes relevantes ou morte súbita familiar. Palpitação é uma percepção subjetiva; taquicardia exige frequência cardíaca medida e interpretada conforme idade e contexto.",
+    "details": [
+      "Início, duração, frequência, regularidade e início/término dos episódios.",
+      "Início, duração, localização central ou periférica, frequência e desencadeantes.",
+      "Localização, características, duração e relação com esforço físico.",
+      "Circunstâncias, duração, sintomas associados e relação com exercício.",
+      "Dispneia, fadiga, intolerância ao esforço e comparação com crianças da mesma idade.",
+      "Doenças prévias, internações, cirurgias e medicamentos em uso.",
+      "ECG, ecocardiograma e outros exames cardiovasculares, incluindo resultados.",
+      "Intercorrências gestacionais/nascimento, cardiopatias, arritmias e morte súbita familiar."
+    ]
+  },
+  "sgi-anamnese": {
+    "notes": "Alertas: perda de peso/desaceleração do crescimento, febre inexplicada, dor persistente ou noturna, diarreia crônica/noturna, sangue nas fezes, vômitos persistentes/biliosos/com sangue, dor localizada persistente, disfagia/odinofagia ou exame anormal. Considerar constipação e transtornos funcionais, mas não presumir causa funcional sem história e exame.",
+    "details": [
+      "Início, duração, localização, irradiação, intensidade, frequência e evolução.",
+      "Relação com alimentos, evacuação, esforço, sono e situações de estresse.",
+      "Frequência, consistência (Bristol), esforço e retenção de fezes.",
+      "Diarreia, muco, sangue, fezes enegrecidas e evacuações noturnas.",
+      "Frequência, conteúdo, bile ou sangue e relação com alimentação.",
+      "Distensão, flatulência, pirose, regurgitação, disfagia e odinofagia.",
+      "Apetite, seletividade, dieta, água, perda de peso e curva de crescimento.",
+      "Febre, sintomas urinários, manifestações extraintestinais, doenças, medicamentos e história familiar."
+    ]
+  },
+  "scv-exame": {
+    "notes": "Pulsos femorais diminuídos em relação aos superiores podem sugerir coarctação. Pressão arterial pediátrica depende de idade, sexo e estatura. Frêmito é vibração palpável associada ao fluxo turbulento. Interpretar toda a semiologia no contexto clínico.",
+    "details": [
+      "Estado geral, cor da pele e mucosas, cianose, palidez, padrão respiratório e desconforto.",
+      "Frequência cardíaca/respiratória, pressão arterial e saturação de O₂, interpretadas pela idade.",
+      "Temperatura das extremidades e tempo de enchimento capilar.",
+      "Frequência, ritmo, amplitude, simetria e pulsos femorais.",
+      "Abaulamentos, retrações e impulsões visíveis.",
+      "Ictus cordis, impulsões e pesquisa de frêmitos.",
+      "Frequência, ritmo, bulhas, sopros, cliques e outros ruídos.",
+      "Foco, fase, intensidade, duração, timbre, irradiação e variação com posição."
+    ]
+  },
+  "sopro-inocente": {
+    "notes": "Um sopro não é classificado apenas pelo foco de ausculta. História, sintomas, pulsos e demais achados do exame importam.",
+    "details": [
+      "Ocorre na sístole, não na diástole.",
+      "Tipicamente curto.",
+      "Em geral até grau II/VI.",
+      "Mais localizado, com pouca ou nenhuma irradiação.",
+      "Não costuma produzir frêmito palpável.",
+      "Sem cliques ou alterações patológicas das bulhas.",
+      "Pode mudar com posição corporal ou respiração.",
+      "Sem sintomas ou achados indicativos de doença cardíaca."
+    ]
+  },
+  "sopro-patologico": {
+    "notes": "Sinais clínicos e alterações acústicas devem ser interpretados conjuntamente. Suspeita de sopro patológico pode exigir avaliação especializada e consideração de ecocardiograma.",
+    "details": [
+      "Sopros diastólicos exigem atenção.",
+      "Ocorre ao longo de toda a sístole.",
+      "Particularmente grau III/VI ou superior.",
+      "Qualidade acústica sugestiva de possível anormalidade.",
+      "Especialmente para dorso ou região cervical.",
+      "Vibração palpável associada ao sopro.",
+      "Cliques, alteração de B2 ou outros ruídos patológicos.",
+      "Síncope, cianose, intolerância ao esforço, pulsos anormais ou outras alterações."
+    ]
+  },
+  "sgi-exame": {
+    "notes": "Ordem: inspeção → ausculta → percussão → palpação. Acolher a criança, aquecer as mãos e começar longe da região dolorosa. Baço palpável em escolar exige correlação clínica e investigação quando indicado.",
+    "details": [
+      "Formato, simetria, distensão, cicatrizes, circulação colateral, pele, abaulamentos e movimentos.",
+      "Ruídos hidroaéreos e sopros vasculares quando indicado.",
+      "Timpanismo/macicez, hepatimetria, Traube e investigação de ascite.",
+      "Dor, hipersensibilidade, defesa e rigidez.",
+      "Massas, vísceras e pontos dolorosos.",
+      "Pesquisa de fígado, baço e rins.",
+      "Irritação peritoneal, apendicite, colecistite, ascite e rim, conforme hipótese."
+    ]
+  }
+}
