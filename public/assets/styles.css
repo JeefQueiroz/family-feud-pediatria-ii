@@ -74,3 +74,11 @@
 @keyframes scoreboard-pop{0%{transform:scale(1)}35%{transform:scale(1.035)}100%{transform:scale(1)}}
 @media(max-width:660px){.presenter-board .presenter-answer-text{font-size:clamp(10px,3.1vw,14px)}.quick-strike-button{min-height:66px;font-size:15px}.quick-strike-explain{flex:1 1 100%;text-align:center}.game-effect{top:52%}}
 @media(prefers-reduced-motion:reduce){.game-effect{animation:none;display:none}.tv-shell .stage:has(.game-effect-award) .scoreboard{animation:none}.quick-strike-button{transition:none}}
+
+
+/* Número do placar que recebeu os pontos: pulso sincronizado à revelação. */
+.team-score.just-scored{border-color:#c4ffa5;box-shadow:0 0 0 3px #90e48f,0 0 34px #90ef7970,inset 0 0 22px #71d89740;animation:score-card-celebrate .95s cubic-bezier(.2,.9,.35,1.1)}
+.team-score.just-scored .score-number{color:#e5ffbb;animation:score-number-celebrate .95s ease-out}
+@keyframes score-card-celebrate{0%{transform:scale(1)}30%{transform:scale(1.08)}60%{transform:scale(.995)}100%{transform:scale(1)}}
+@keyframes score-number-celebrate{0%{transform:scale(.7);opacity:.5}40%{transform:scale(1.19);opacity:1}100%{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.team-score.just-scored,.team-score.just-scored .score-number{animation:none}}
