@@ -26,3 +26,8 @@
 .quick-hint{font-size:12px;color:#c4d3dd;margin:0}
 @media(max-width:1050px){.presenter-layout{grid-template-columns:1fr}.presenter-board .stage{min-height:520px}.presenter-board .answer-label{font-size:clamp(11px,2.2vw,16px)}}
 @media(max-width:660px){.presenter-layout{gap:10px}.quick-navigation{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-team{padding:11px}.presenter-board .stage{min-height:510px}.presenter-board .answer-grid{gap:6px}.presenter-board .answer-slot{min-height:55px!important}.presenter-board .answer-label{font-size:clamp(10px,2.4vw,14px)}}
+
+/* Revealed answers remain fully legible even though their buttons cannot be clicked again. */
+.answer-slot:disabled{opacity:1;cursor:default!important}
+.answer-slot.is-revealed .slot-back{background:#ffffff;color:#102438;border-color:#6ac46e;box-shadow:0 3px 14px #0006}
+.answer-slot.is-revealed .answer-label{color:#102438;text-shadow:none}
