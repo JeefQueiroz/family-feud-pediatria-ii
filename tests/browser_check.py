@@ -42,7 +42,20 @@ with sync_playwright() as p:
     assert admin.locator('.quick-strike-button').is_visible()
     admin.locator('.quick-strike-button').click()
     assert '1 / 3' in admin.locator('.quick-strike-button').inner_text()
+    assert 'EQUIPE 2' in admin.locator('[data-team-display]').first.inner_text()
     assert admin.locator('[data-timer-display]').first.inner_text()=='10'
+    admin.evaluate('window.fakeNow+=2000')
+    admin.wait_for_timeout(300)
+    assert admin.locator('[data-timer-display]').first.inner_text()=='8'
+    admin.locator('.next-team-button').click()
+    assert 'EQUIPE 1' in admin.locator('[data-team-display]').first.inner_text()
+    assert '1 / 3' in admin.locator('.quick-strike-button').inner_text()
+    assert admin.locator('[data-timer-display]').first.inner_text()=='10'
+    admin.locator('.quick-strike-button').click()
+    assert 'EQUIPE 2' in admin.locator('[data-team-display]').first.inner_text()
+    assert '2 / 3' in admin.locator('.quick-strike-button').inner_text()
+    assert admin.locator('[data-timer-display]').first.inner_text()=='10'
+    admin.locator('[data-action="timer-reset"]').click()
     admin.locator('[data-action="timer-start"]').click()
     assert admin.locator('[data-timer-display]').first.inner_text()=='10'
     admin.evaluate('window.fakeNow+=3000')
@@ -93,7 +106,7 @@ with sync_playwright() as p:
     state={'mode':'round','round':0,'r1':0,'team1':'ALFA','team2':'BETA','score1':0,'score2':20,
            'multiplier':1,'revealed':[0],'strikes':0,'awarded':False,'r1ShowAnswer':False,
            'r1Awarded':False,'lastAward':None,'activeTeam':2,'timerRunning':True,
-           'timerEnd':2000000005000,'timerRemaining':10,'rev':3}
+           'timerEnd':2000000005000,'timerRemaining':10,'rev':3,'effectHistory':[]}
     tv=page(browser,'index.html',state)
     tv.wait_for_timeout(300)
     assert tv.locator('#turn-indicator').inner_text()=='VEZ: BETA'
@@ -102,15 +115,24 @@ with sync_playwright() as p:
     assert tv.locator('.answer-slot.is-revealed').count()==1
     assert tv.locator('.presenter-answer-text').count()==0
     assert tv.locator('.answer-slot .slot-front b').count()==8
-    transition={**state,'score2':30,'revealed':[0,1],'rev':4}
+    first_event={'id':4,'kind':'award','team':2,'teamName':'BETA','amount':10,'answer':1,'mode':'round','round':0}
+    transition={**state,'score2':30,'revealed':[0,1],'rev':4,'effectHistory':[first_event]}
     tv.evaluate('(d)=>window.host.onState(d)',transition)
     assert tv.locator('.game-effect-award').count()==1
     assert '10 PONTOS' in tv.locator('.game-effect-award').inner_text()
     assert tv.locator('.team-score.just-scored .score-number').inner_text()=='30'
     assert tv.locator('.answer-slot.newly-revealed').count()==1
-    tv.evaluate('(d)=>window.host.onState(d)',{**transition,'strikes':1,'rev':5})
+    second_event={'id':5,'kind':'award','team':2,'teamName':'BETA','amount':10,'answer':2,'mode':'round','round':0}
+    tv.evaluate('(d)=>window.host.onState(d)',{**transition,'score2':40,'revealed':[0,1,2],'rev':5,'effectHistory':[first_event,second_event]})
+    assert tv.locator('.score-number').nth(1).inner_text()=='40'
+    tv.wait_for_timeout(1750)
+    assert tv.locator('.game-effect-award').count()==1
+    assert '10 PONTOS' in tv.locator('.game-effect-award').inner_text()
+    strike_event={'id':6,'kind':'strike','strikes':1}
+    tv.evaluate('(d)=>window.host.onState(d)',{**transition,'score2':40,'revealed':[0,1,2],'strikes':1,'rev':6,'effectHistory':[first_event,second_event,strike_event]})
+    tv.wait_for_timeout(1750)
     assert tv.locator('.game-effect-strike').count()==1
-    assert 'ERRO!' in tv.locator('.game-effect-strike').inner_text()
+    assert 'ERROU' in tv.locator('.game-effect-strike').inner_text()
     for selector in ['#sound-button','#fullscreen-button','#connection']:
         assert tv.locator(selector).count()==0
     browser.close()
