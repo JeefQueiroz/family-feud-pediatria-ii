@@ -13,6 +13,7 @@
   let audioContext = null;
   let soundEnabled = false;
   let tvSnapshotReady = false;
+  let pendingGameEffect = null;
   let channel = null;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeIndex = (value, count) => Math.max(0,Math.min(count-1,Number.isInteger(+value)? +value:0));
@@ -50,14 +51,32 @@
     render();
     window.FFRemote?.publish(state);
   }
-  function mutate(fn){if(!isAdmin || !content || (!window.FFRemote?.available() || !window.FFRemote.canControl())) return; fn();save();}
+  function detectGameEffect(previous,next){
+    if(!previous||!next)return;
+    const team=[1,2].find(n=>Number(next['score'+n])>Number(previous['score'+n]));
+    if(team){
+      const amount=Number(next['score'+team])-Number(previous['score'+team]);
+      const roundMatched=next.mode==='round'&&previous.mode==='round'&&next.round===previous.round;
+      const newAnswers=roundMatched?(next.revealed||[]).filter(i=>!(previous.revealed||[]).includes(i)):[];
+      pendingGameEffect={kind:'award',team,amount,answer:newAnswers.length===1?newAnswers[0]:null};
+    }else if(next.mode==='round'&&previous.mode==='round'&&next.round===previous.round&&Number(next.strikes)>Number(previous.strikes)){
+      pendingGameEffect={kind:'strike',strikes:next.strikes};
+    }else pendingGameEffect=null;
+  }
+  function mutate(fn){
+    if(!isAdmin||!content||(!window.FFRemote?.available()||!window.FFRemote.canControl()))return;
+    const previous={...state,revealed:[...state.revealed]};
+    fn();
+    detectGameEffect(previous,state);
+    save();
+  }
   function handleRemoteEffects(next){
-    if(isAdmin || !next || !tvSnapshotReady)return;
-    const prior=state;
-    if(next.mode!=='round'||prior.mode!=='round'||next.round!==prior.round)return;
-    const priorAnswers=new Set(Array.isArray(prior.revealed)?prior.revealed:[]);
-    if(Array.isArray(next.revealed) && next.revealed.some(i=>!priorAnswers.has(i)))playSound('correct');
-    else if(Number(next.strikes)>Number(prior.strikes))playSound('wrong');
+    if(isAdmin||!next||!tvSnapshotReady)return;
+    detectGameEffect(state,next);
+    if(!pendingGameEffect)return;
+    if(pendingGameEffect.kind==='strike')playSound('wrong');
+    else if(pendingGameEffect.answer!==null)playSound('correct');
+    else playSound('win');
   }
   function receive(next){ if(!content || !next || +next.rev < +state.rev) return; handleRemoteEffects(next);state=normalize(next);tvSnapshotReady=true;render(); }
   function secondsRemaining(){return state.timerRunning?Math.max(0,Math.ceil((state.timerEnd-Date.now())/1000)):state.timerRemaining;}
@@ -150,14 +169,21 @@
       });
     }catch(e){ console.warn('Áudio não disponível',e); }
   }
-  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length}`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
+  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===1?'just-scored':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length}`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===2?'just-scored':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
+  function effectsMarkup(){
+    if(!pendingGameEffect)return '';
+    const effect=pendingGameEffect;
+    if(effect.kind==='strike')return '<div class="game-effect game-effect-strike" aria-live="polite"><span>✕</span><strong>ERRO!</strong></div>';
+    const name=state['team'+effect.team];
+    return `<div class="game-effect game-effect-award" aria-live="polite"><span>+${effect.amount} PONTOS</span><strong>${esc(name)}</strong></div>`;
+  }
   function stageRound(){const q=currentRound();if(!q)return `<div class="waiting">Sem perguntas aprovadas.</div>`;
     const cards=Array.from({length:8},(_,i)=>{const a=q.answers[i];const revealed=state.revealed.includes(i);
       if(!a) return `<div class="answer-slot empty" aria-hidden="true"></div>`;
-      return `<button class="answer-slot ${revealed?'is-revealed':''} ${isAdmin&&!state.awarded&&!revealed?'clickable':''}" type="button" ${isAdmin&&!state.awarded&&!revealed?`data-answer="${i}"`:'disabled'} aria-label="Resposta ${i+1}, ${revealed?'revelada':'oculta'}"><span class="slot-inner"><span class="slot-front"><b>${i+1}</b></span><span class="slot-back"><span class="answer-label">${esc(a.label)}</span></span></span></button>`;}).join('');
-    return `<section class="stage"><div class="stage-kicker">RODADA ${state.round+1} / ${content.rounds.length} <span>·</span> ${esc(q.title)}</div><h2 class="stage-question">${esc(q.question)}</h2>${scoreMarkup()}<div class="answer-grid">${cards}</div><div class="stage-footer"><span>${state.strikes?`<span class="strikes">${'✕'.repeat(state.strikes)}</span>`:'RESPOSTAS OCULTAS · AGUARDANDO ACERTOS'}</span><span>10 PONTOS POR RESPOSTA</span></div></section>`;}
+      return `<button class="answer-slot ${revealed?'is-revealed':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.answer===i?'newly-revealed':''} ${isAdmin&&!state.awarded&&!revealed?'clickable':''}" type="button" ${isAdmin&&!state.awarded&&!revealed?`data-answer="${i}"`:'disabled'} aria-label="${isAdmin?esc(a.label):`Resposta ${i+1}`}, ${revealed?'revelada':'oculta'}"><span class="slot-inner"><span class="slot-front">${isAdmin?`<span class="presenter-answer-text">${esc(a.label)}</span>`:`<b>${i+1}</b>`}</span><span class="slot-back"><span class="answer-label">${esc(a.label)}</span></span></span></button>`;}).join('');
+    return `<section class="stage"><div class="stage-kicker">RODADA ${state.round+1} / ${content.rounds.length} <span>·</span> ${esc(q.title)}</div><h2 class="stage-question">${esc(q.question)}</h2>${scoreMarkup()}<div class="answer-grid">${cards}</div>${effectsMarkup()}<div class="stage-footer"><span>${state.strikes?`<span class="strikes">${'✕'.repeat(state.strikes)}</span>`:'RESPOSTAS OCULTAS · AGUARDANDO ACERTOS'}</span><span>10 PONTOS POR RESPOSTA</span></div></section>`;}
   function stageR1(){const q=currentR1();if(!q)return `<div class="waiting">Sem desafios.</div>`;
-    return `<section class="stage"><div class="stage-kicker">QUEM QUER SER UM R1? <span>·</span> DESAFIO ${state.r1+1} / ${content.r1.length}</div><h2 class="stage-question">${esc(q.prompt)}</h2>${scoreMarkup()}<div class="r1-choices">${q.options.map((option,i)=>`<div class="r1-option ${state.r1ShowAnswer && i===q.correct?'correct':''} ${state.r1ShowAnswer && i!==q.correct?'muted':''}"><span class="letter">${'ABCD'[i]}</span><span>${esc(option)}</span>${state.r1ShowAnswer && i===q.correct?'<span class="tick">✓</span>':''}</div>`).join('')}</div><div class="stage-footer">${state.r1ShowAnswer?'<span class="good-answer">GABARITO REVELADO</span>':'<span>ESCOLHAM UMA ALTERNATIVA</span>'}<span>10 PONTOS POR ACERTO</span></div></section>`;}
+    return `<section class="stage"><div class="stage-kicker">QUEM QUER SER UM R1? <span>·</span> DESAFIO ${state.r1+1} / ${content.r1.length}</div><h2 class="stage-question">${esc(q.prompt)}</h2>${scoreMarkup()}${effectsMarkup()}<div class="r1-choices">${q.options.map((option,i)=>`<div class="r1-option ${state.r1ShowAnswer && i===q.correct?'correct':''} ${state.r1ShowAnswer && i!==q.correct?'muted':''}"><span class="letter">${'ABCD'[i]}</span><span>${esc(option)}</span>${state.r1ShowAnswer && i===q.correct?'<span class="tick">✓</span>':''}</div>`).join('')}</div><div class="stage-footer">${state.r1ShowAnswer?'<span class="good-answer">GABARITO REVELADO</span>':'<span>ESCOLHAM UMA ALTERNATIVA</span>'}<span>10 PONTOS POR ACERTO</span></div></section>`;}
   function stage(){return state.mode==='r1'?stageR1():stageRound();}
   function updateClockLabels(){
     if(isAdmin && state.timerRunning && secondsRemaining()===0 && window.FFRemote?.canControl()){
@@ -193,10 +219,11 @@
         <button class="quick-team ${state.activeTeam===1?'active':''}" data-action="select-team1" aria-pressed="${state.activeTeam===1}"><span>${esc(state.team1)}</span><strong>${state.score1}</strong></button>
         <button class="quick-team ${state.activeTeam===2?'active':''}" data-action="select-team2" aria-pressed="${state.activeTeam===2}"><span>${esc(state.team2)}</span><strong>${state.score2}</strong></button>
       </div>
+      ${round?`<div class="quick-strike-row"><button type="button" class="quick-strike-button" data-action="strike" ${state.strikes>=3?'disabled':''}><span class="quick-strike-icon">✕</span><span>ERROU / PASSAR VEZ</span><strong>${state.strikes} / 3</strong></button><span class="quick-strike-explain">Marca erro e alterna para a outra equipe.</span></div>`:''}
       <p class="quick-hint">${round?'Selecione a equipe e toque no número de uma resposta oculta. +10 pontos automaticamente.':'Desafio prático: revele o gabarito e conceda os pontos no painel.'}</p>
     </div>`;
   }
-  function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin){renderQuickControls();renderAdmin();}}
+  function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin){renderQuickControls();renderAdmin();}pendingGameEffect=null;}
   function renderAdmin(){
     if(!window.FFRemote?.available() || !window.FFRemote.canControl()){
       if(window.FFRemote) window.FFRemote.renderLogin(controlMount);

@@ -35,6 +35,13 @@ with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,args=['--no-sandbox'])
     admin=page(browser,'admin/index.html')
     assert admin.locator('.answer-slot').count()==8
+    assert admin.locator('.presenter-answer-text').count()==8
+    assert admin.locator('.answer-slot .slot-front b').count()==0
+    assert admin.locator('.presenter-answer-text').first.inner_text()==DATA['rounds'][0]['answers'][0]['label']
+    assert admin.locator('.quick-strike-button').count()==1
+    assert admin.locator('.quick-strike-button').is_visible()
+    admin.locator('.quick-strike-button').click()
+    assert '1 / 3' in admin.locator('.quick-strike-button').inner_text()
     assert admin.locator('[data-timer-display]').first.inner_text()=='10'
     admin.locator('[data-action="timer-start"]').click()
     assert admin.locator('[data-timer-display]').first.inner_text()=='10'
@@ -57,6 +64,11 @@ with sync_playwright() as p:
     admin.locator('.answer-slot[data-answer="0"]').click()
     assert admin.locator('.score-number').nth(1).inner_text()=='10'
     assert admin.locator('.answer-slot.is-revealed').count()==1
+    assert admin.locator('.answer-slot.newly-revealed').count()==1
+    assert admin.locator('.game-effect-award').count()==1
+    assert '10 PONTOS' in admin.locator('.game-effect-award').inner_text()
+    assert admin.locator('.team-score.just-scored').count()==1
+    assert '0 / 3' in admin.locator('.quick-strike-button').inner_text()
     assert admin.locator('.answer-points').count()==0
     admin.locator('#presenter-quick-controls [data-action="next"]').click()
     admin.locator('#presenter-quick-controls [data-action="prev"]').click()
@@ -88,6 +100,17 @@ with sync_playwright() as p:
     assert tv.locator('#tv-timer-seconds').inner_text()=='5'
     assert tv.locator('.team-score.is-active-team .score-caption').inner_text()=='BETA'
     assert tv.locator('.answer-slot.is-revealed').count()==1
+    assert tv.locator('.presenter-answer-text').count()==0
+    assert tv.locator('.answer-slot .slot-front b').count()==8
+    transition={**state,'score2':30,'revealed':[0,1],'rev':4}
+    tv.evaluate('(d)=>window.host.onState(d)',transition)
+    assert tv.locator('.game-effect-award').count()==1
+    assert '10 PONTOS' in tv.locator('.game-effect-award').inner_text()
+    assert tv.locator('.team-score.just-scored .score-number').inner_text()=='30'
+    assert tv.locator('.answer-slot.newly-revealed').count()==1
+    tv.evaluate('(d)=>window.host.onState(d)',{**transition,'strikes':1,'rev':5})
+    assert tv.locator('.game-effect-strike').count()==1
+    assert 'ERRO!' in tv.locator('.game-effect-strike').inner_text()
     for selector in ['#sound-button','#fullscreen-button','#connection']:
         assert tv.locator(selector).count()==0
     browser.close()
