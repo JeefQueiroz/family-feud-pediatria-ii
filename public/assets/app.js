@@ -7,7 +7,7 @@
   const gameMount = document.getElementById('game-mount');
   const controlMount = document.getElementById('control-mount');
   const quickMount = document.getElementById('presenter-quick-controls');
-  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
+  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],roundProgress:{},r1Progress:{},strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
   let state = initial();
   let content = null;
   let audioContext = null;
@@ -33,6 +33,8 @@
     base.team1=String(base.team1||'EQUIPE 1').slice(0,38);
     base.team2=String(base.team2||'EQUIPE 2').slice(0,38);
     base.revealed=Array.isArray(base.revealed)?base.revealed:[];
+    base.roundProgress=base.roundProgress&&typeof base.roundProgress==='object'&&!Array.isArray(base.roundProgress)?base.roundProgress:{};
+    base.r1Progress=base.r1Progress&&typeof base.r1Progress==='object'&&!Array.isArray(base.r1Progress)?base.r1Progress:{};
     base.strikes=Math.max(0,Math.min(3,Number(base.strikes)||0));
     base.activeTeam=[1,2].includes(+base.activeTeam)?+base.activeTeam:1;
     base.timerRunning=!!base.timerRunning;
@@ -83,11 +85,30 @@
     state.activeTeam=state.activeTeam===1?2:1;
     resetClock();playSound('wrong');
   });}
-  function changeRound(i){ mutate(()=>{state.mode='round';state.round=safeIndex(i,content.rounds.length);state.revealed=[];state.strikes=0;state.awarded=false;state.lastAward=null;resetClock();state.activeTeam=1;}); }
-  function changeR1(i){ mutate(()=>{state.mode='r1';state.r1=safeIndex(i,content.r1.length);state.strikes=0;state.r1ShowAnswer=false;state.r1Awarded=false;state.lastAward=null;resetClock();state.activeTeam=1;}); }
+  function saveCurrentProgress(){
+    if(state.mode==='round')state.roundProgress[state.round]=[...state.revealed];
+    else state.r1Progress[state.r1]={shown:!!state.r1ShowAnswer,awarded:!!state.r1Awarded};
+  }
+  function changeRound(i){mutate(()=>{
+    saveCurrentProgress();
+    state.mode='round';
+    state.round=safeIndex(i,content.rounds.length);
+    const saved=state.roundProgress[state.round];
+    state.revealed=Array.isArray(saved)?saved.filter(n=>Number.isInteger(n)&&n>=0&&n<content.rounds[state.round].answers.length):[];
+    state.strikes=0;state.awarded=false;state.lastAward=null;resetClock();state.activeTeam=1;
+  });}
+  function changeR1(i){mutate(()=>{
+    saveCurrentProgress();
+    state.mode='r1';
+    state.r1=safeIndex(i,content.r1.length);
+    const saved=state.r1Progress[state.r1]||{};
+    state.r1ShowAnswer=!!saved.shown;state.r1Awarded=!!saved.awarded;
+    state.strikes=0;state.lastAward=null;resetClock();state.activeTeam=1;
+  });}
   function revealAndScore(i){
     if(state.mode!=='round'||state.awarded||!Number.isInteger(i)||i<0||i>=currentRound().answers.length||state.revealed.includes(i))return;
     state.revealed=[...state.revealed,i];
+    state.roundProgress[state.round]=[...state.revealed];
     const team=state.activeTeam;
     const amount=points();
     state['score'+team]+=amount;
@@ -99,14 +120,20 @@
   function award(team){mutate(()=>{
     if (![1,2].includes(team)) return;
     if(state.mode==='r1' && state.r1ShowAnswer && !state.r1Awarded){
-      state['score'+team]+=points();state.r1Awarded=true;state.lastAward={team,amount:points(),mode:state.mode,index:state.r1};playSound('win');
+      state['score'+team]+=points();state.r1Awarded=true;state.r1Progress[state.r1]={shown:true,awarded:true};state.lastAward={team,amount:points(),mode:state.mode,index:state.r1};playSound('win');
     }
   });}
   function undoAward(){mutate(()=>{
     const a=state.lastAward;
     if(!a || a.mode!==state.mode || a.index!==(state.mode==='round'?state.round:state.r1))return;
     state['score'+a.team]=Math.max(0,state['score'+a.team]-a.amount);
-    if(a.mode==='round' && Number.isInteger(a.answer))state.revealed=state.revealed.filter(i=>i!==a.answer);else if(a.mode==='r1')state.r1Awarded=false;
+    if(a.mode==='round' && Number.isInteger(a.answer)){
+      state.revealed=state.revealed.filter(i=>i!==a.answer);
+      state.roundProgress[state.round]=[...state.revealed];
+    }else if(a.mode==='r1'){
+      state.r1Awarded=false;
+      state.r1Progress[state.r1]={shown:!!state.r1ShowAnswer,awarded:false};
+    }
     state.lastAward=null;
   });}
   function playSound(which){ if(!soundEnabled)return;
@@ -123,7 +150,7 @@
       });
     }catch(e){ console.warn('Áudio não disponível',e); }
   }
-  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length} · ${state.multiplier}×`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
+  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length}`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
   function stageRound(){const q=currentRound();if(!q)return `<div class="waiting">Sem perguntas aprovadas.</div>`;
     const cards=Array.from({length:8},(_,i)=>{const a=q.answers[i];const revealed=state.revealed.includes(i);
       if(!a) return `<div class="answer-slot empty" aria-hidden="true"></div>`;
@@ -212,12 +239,12 @@
       else if(action==='timer-pause')clockPause();
       else if(action==='timer-reset')clockReset();
       else if(action==='clear-strikes')mutate(()=>state.strikes=0);
-      else if(action==='show-r1')mutate(()=>{if(!state.r1Awarded)state.r1ShowAnswer=!state.r1ShowAnswer;});
+      else if(action==='show-r1')mutate(()=>{if(!state.r1Awarded){state.r1ShowAnswer=!state.r1ShowAnswer;state.r1Progress[state.r1]={shown:state.r1ShowAnswer,awarded:false};}});
       else if(action==='award1')award(1);
       else if(action==='award2')award(2);
       else if(action==='undo')undoAward();
       else if(action.startsWith('score'))mutate(()=>{const team=action.includes('score1')?1:2;const amount=action.endsWith('plus')?10:-10;state['score'+team]=Math.max(0,state['score'+team]+amount);});
-      else if(action==='reset' && window.confirm('Zerar os dois placares?'))mutate(()=>{state.score1=0;state.score2=0;state.awarded=false;state.r1Awarded=false;state.lastAward=null;});
+      else if(action==='reset' && window.confirm('Reiniciar a partida? Isso zerará pontos e respostas já reveladas.'))mutate(()=>{state.score1=0;state.score2=0;state.mode='round';state.round=0;state.r1=0;state.revealed=[];state.roundProgress={};state.r1Progress={};state.strikes=0;state.awarded=false;state.r1Awarded=false;state.r1ShowAnswer=false;state.lastAward=null;state.activeTeam=1;resetClock();});
     };
     controlMount?.addEventListener('click',handleControls);
     quickMount?.addEventListener('click',handleControls);
