@@ -42,7 +42,7 @@
     render();
     window.FFRemote?.publish(state);
   }
-  function mutate(fn){if(!isAdmin || !content || (window.FFRemote?.available() && !window.FFRemote.canControl())) return; fn();save();}
+  function mutate(fn){if(!isAdmin || !content || (!window.FFRemote?.available() || !window.FFRemote.canControl())) return; fn();save();}
   function receive(next){ if(!content || !next || +next.rev < +state.rev) return; state=normalize(next);render(); }
   function changeRound(i){ mutate(()=>{state.mode='round';state.round=safeIndex(i,content.rounds.length);state.revealed=[];state.strikes=0;state.awarded=false;state.lastAward=null;}); }
   function changeR1(i){ mutate(()=>{state.mode='r1';state.r1=safeIndex(i,content.r1.length);state.strikes=0;state.r1ShowAnswer=false;state.r1Awarded=false;state.lastAward=null;}); }
@@ -86,8 +86,9 @@
   function stage(){return state.mode==='r1'?stageR1():stageRound();}
   function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin)renderAdmin();}
   function renderAdmin(){
-    if(window.FFRemote?.available() && !window.FFRemote.canControl()){
-      window.FFRemote.renderLogin(controlMount);
+    if(!window.FFRemote?.available() || !window.FFRemote.canControl()){
+      if(window.FFRemote) window.FFRemote.renderLogin(controlMount);
+      else controlMount.innerHTML='<p class="waiting">Biblioteca de controle remoto indisponível. Verifique sua conexão e recarregue.</p>';
       return;
     }
     const isRound=state.mode==='round', q=isRound?currentRound():currentR1();
