@@ -31,3 +31,14 @@
 .answer-slot:disabled{opacity:1;cursor:default!important}
 .answer-slot.is-revealed .slot-back{background:#ffffff;color:#102438;border-color:#6ac46e;box-shadow:0 3px 14px #0006}
 .answer-slot.is-revealed .answer-label{color:#102438;text-shadow:none}
+
+/* Exibição na TV: informações úteis em vez de botões de configuração. */
+.tv-shell .header-actions{margin-left:auto;display:flex;gap:10px;align-items:center}
+.tv-turn{display:inline-flex;align-items:center;min-height:42px;background:rgba(16,73,54,.84);border:1px solid #70d995;color:#edfff1;font-size:13px;letter-spacing:.05em;padding:8px 16px}
+.tv-timer{display:flex;align-items:baseline;gap:5px;padding:5px 14px;background:#102b4e;border:1px solid #d6a84faa;border-radius:13px;min-height:43px;color:#fff;font-variant-numeric:tabular-nums}
+.tv-timer span{font-size:10px;font-weight:900;letter-spacing:.08em;color:#ffe0a1;margin-right:5px}
+.tv-timer strong{font-size:26px;line-height:1;font-weight:950;min-width:26px;text-align:right}
+.tv-timer small{font-size:12px;color:#c5d9ef;font-weight:800}
+.tv-shell .team-score.is-active-team{border-color:#6ac46e;box-shadow:inset 0 0 20px #0008,0 0 0 3px #6ac46e77,0 0 24px #6ac46e55}
+.tv-shell .answer-slot:disabled{opacity:1}
+@media(max-width:660px){.tv-shell .header-actions{width:100%;justify-content:space-between}.tv-turn{font-size:11px;padding:8px 10px}.tv-timer span{font-size:9px}.tv-timer strong{font-size:23px}}
