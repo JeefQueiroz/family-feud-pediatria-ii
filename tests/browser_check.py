@@ -62,8 +62,11 @@ with sync_playwright() as p:
     admin.locator('#presenter-quick-controls [data-action="prev"]').click()
     assert admin.locator('.answer-slot.is-revealed').count()==1
     assert admin.locator('.score-number').nth(1).inner_text()=='10'
+    assert admin.locator('[data-action="undo"]').is_disabled()
+    admin.locator('.answer-slot[data-answer="1"]').click()
+    assert admin.locator('.score-number').first.inner_text()=='10'
     admin.locator('[data-action="undo"]').click()
-    assert admin.locator('.score-number').nth(1).inner_text()=='0'
+    assert admin.locator('.score-number').first.inner_text()=='0'
     admin.locator('#presenter-quick-controls [data-action="mode-r1"]').click()
     admin.locator('[data-action="show-r1"]').click()
     admin.locator('[data-action="award1"]').click()
