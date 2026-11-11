@@ -7,7 +7,7 @@
   const gameMount = document.getElementById('game-mount');
   const controlMount = document.getElementById('control-mount');
   const quickMount = document.getElementById('presenter-quick-controls');
-  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],roundProgress:{},r1Progress:{},effectHistory:[],strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
+  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],roundProgress:{},r1Progress:{},effectHistory:[],strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,r1Selected:null,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
   let state = initial();
   let content = null;
   let audioContext = null;
@@ -33,6 +33,7 @@
     base.mode=base.mode==='r1'?'r1':'round';
     base.round=safeIndex(base.round,content.rounds.length);
     base.r1=safeIndex(base.r1,content.r1.length);
+    base.r1Selected=Number.isInteger(base.r1Selected)&&base.r1Selected>=0&&base.r1Selected<4?base.r1Selected:null;
     base.multiplier=[1,2,3].includes(+base.multiplier)? +base.multiplier:1;
     for (const k of ['score1','score2']) base[k]=Math.max(0,Number.isFinite(+base[k])? Math.floor(+base[k]):0);
     base.team1=String(base.team1||'EQUIPE 1').slice(0,38);
@@ -180,7 +181,7 @@
   function nextTeam(){switchTeamAndStartTimer(false);}
   function saveCurrentProgress(){
     if(state.mode==='round')state.roundProgress[state.round]=[...state.revealed];
-    else state.r1Progress[state.r1]={shown:!!state.r1ShowAnswer,awarded:!!state.r1Awarded};
+    else state.r1Progress[state.r1]={shown:!!state.r1ShowAnswer,awarded:!!state.r1Awarded,selected:state.r1Selected};
   }
   function changeRound(i){mutate(()=>{
     saveCurrentProgress();
@@ -195,7 +196,7 @@
     state.mode='r1';
     state.r1=safeIndex(i,content.r1.length);
     const saved=state.r1Progress[state.r1]||{};
-    state.r1ShowAnswer=!!saved.shown;state.r1Awarded=!!saved.awarded;
+    state.r1ShowAnswer=!!saved.shown;state.r1Awarded=!!saved.awarded;state.r1Selected=Number.isInteger(saved.selected)&&saved.selected>=0&&saved.selected<4?saved.selected:null;
     state.strikes=0;state.lastAward=null;resetClock();state.activeTeam=1;
   });}
   function revealAndScore(i){
@@ -213,7 +214,7 @@
   function award(team){mutate(()=>{
     if (![1,2].includes(team)) return;
     if(state.mode==='r1' && state.r1ShowAnswer && !state.r1Awarded){
-      state['score'+team]+=points();state.r1Awarded=true;state.r1Progress[state.r1]={shown:true,awarded:true};state.lastAward={team,amount:points(),mode:state.mode,index:state.r1};playSound('win');
+      state['score'+team]+=points();state.r1Awarded=true;state.r1Progress[state.r1]={shown:true,awarded:true,selected:state.r1Selected};state.lastAward={team,amount:points(),mode:state.mode,index:state.r1};playSound('win');
     }
   });}
   function undoAward(){mutate(()=>{
@@ -225,7 +226,7 @@
       state.roundProgress[state.round]=[...state.revealed];
     }else if(a.mode==='r1'){
       state.r1Awarded=false;
-      state.r1Progress[state.r1]={shown:!!state.r1ShowAnswer,awarded:false};
+      state.r1Progress[state.r1]={shown:!!state.r1ShowAnswer,awarded:false,selected:state.r1Selected};
     }
     state.lastAward=null;
   });}
@@ -251,7 +252,7 @@
       return `<button class="answer-slot ${revealed?'is-revealed':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.answer===i?'newly-revealed':''} ${isAdmin&&!state.awarded&&!revealed?'clickable':''}" type="button" ${isAdmin&&!state.awarded&&!revealed?`data-answer="${i}"`:'disabled'} aria-label="${isAdmin?esc(a.label):`Resposta ${i+1}`}, ${revealed?'revelada':'oculta'}"><span class="slot-inner"><span class="slot-front">${isAdmin?`<span class="presenter-answer-text">${esc(a.label)}</span>`:`<b>${i+1}</b>`}</span><span class="slot-back"><span class="answer-label">${esc(a.label)}</span></span></span></button>`;}).join('');
     return `<section class="stage"><div class="stage-kicker">RODADA ${state.round+1} / ${content.rounds.length} <span>·</span> ${esc(q.title)}</div><h2 class="stage-question">${esc(q.question)}</h2>${scoreMarkup()}<div class="answer-grid">${cards}</div>${effectsMarkup()}<div class="stage-footer"><span>${state.strikes?`<span class="strikes">${'✕'.repeat(state.strikes)}</span>`:'RESPOSTAS OCULTAS · AGUARDANDO ACERTOS'}</span><span>10 PONTOS POR RESPOSTA</span></div></section>`;}
   function stageR1(){const q=currentR1();if(!q)return `<div class="waiting">Sem desafios.</div>`;
-    return `<section class="stage"><div class="stage-kicker">QUEM QUER SER UM R1? <span>·</span> DESAFIO ${state.r1+1} / ${content.r1.length}</div><h2 class="stage-question">${esc(q.prompt)}</h2>${scoreMarkup()}${effectsMarkup()}<div class="r1-choices">${q.options.map((option,i)=>`<div class="r1-option ${state.r1ShowAnswer && i===q.correct?'correct':''} ${state.r1ShowAnswer && i!==q.correct?'muted':''}"><span class="letter">${'ABCD'[i]}</span><span>${esc(option)}</span>${state.r1ShowAnswer && i===q.correct?'<span class="tick">✓</span>':''}</div>`).join('')}</div><div class="stage-footer">${state.r1ShowAnswer?'<span class="good-answer">GABARITO REVELADO</span>':'<span>ESCOLHAM UMA ALTERNATIVA</span>'}<span>10 PONTOS POR ACERTO</span></div></section>`;}
+    return `<section class="stage"><div class="stage-kicker">QUEM QUER SER UM R1? <span>·</span> DESAFIO ${state.r1+1} / ${content.r1.length}</div><h2 class="stage-question">${esc(q.prompt)}</h2>${scoreMarkup()}${effectsMarkup()}<div class="r1-choices">${q.options.map((option,i)=>{const flipped=state.r1ShowAnswer||state.r1Selected===i;const letter='ABCD'[i];const contentText=`<span class="letter">${letter}</span><span>${esc(option)}</span>`;return `<${isAdmin?'button':'div'} class="r1-option ${flipped?'is-flipped':''} ${state.r1Selected===i?'is-selected':''} ${state.r1ShowAnswer && i===q.correct?'correct':''} ${state.r1ShowAnswer && i!==q.correct?'muted':''}" ${isAdmin?`type="button" data-r1-option="${i}" aria-pressed="${state.r1Selected===i}" ${state.r1ShowAnswer?'disabled':''}` : ''}><span class="r1-option-inner"><span class="r1-option-front">${contentText}</span><span class="r1-option-back">${contentText}${state.r1ShowAnswer && i===q.correct?'<span class="tick">✓</span>':state.r1Selected===i&&!state.r1ShowAnswer?'<span class="tick">●</span>':''}</span></span></${isAdmin?'button':'div'}>`}).join('')}</div><div class="stage-footer">${state.r1ShowAnswer?'<span class="good-answer">GABARITO REVELADO</span>':'<span>ESCOLHAM UMA ALTERNATIVA</span>'}<span>10 PONTOS POR ACERTO</span></div></section>`;}
   function stage(){return state.mode==='r1'?stageR1():stageRound();}
   function updateClockLabels(){
     if(isAdmin && state.timerRunning && secondsRemaining()===0 && window.FFRemote?.canControl()){
@@ -335,12 +336,12 @@
       else if(action==='timer-pause')clockPause();
       else if(action==='timer-reset')clockReset();
       else if(action==='clear-strikes')mutate(()=>state.strikes=0);
-      else if(action==='show-r1')mutate(()=>{if(!state.r1Awarded){state.r1ShowAnswer=!state.r1ShowAnswer;state.r1Progress[state.r1]={shown:state.r1ShowAnswer,awarded:false};}});
+      else if(action==='show-r1')mutate(()=>{if(!state.r1Awarded){state.r1ShowAnswer=!state.r1ShowAnswer;state.r1Progress[state.r1]={shown:state.r1ShowAnswer,awarded:false,selected:state.r1Selected};}});
       else if(action==='award1')award(1);
       else if(action==='award2')award(2);
       else if(action==='undo')undoAward();
       else if(action.startsWith('score'))mutate(()=>{const team=action.includes('score1')?1:2;const amount=action.endsWith('plus')?10:-10;state['score'+team]=Math.max(0,state['score'+team]+amount);});
-      else if(action==='reset' && window.confirm('Reiniciar a partida? Isso zerará pontos e respostas já reveladas.'))mutate(()=>{state.score1=0;state.score2=0;state.mode='round';state.round=0;state.r1=0;state.revealed=[];state.roundProgress={};state.r1Progress={};state.strikes=0;state.awarded=false;state.r1Awarded=false;state.r1ShowAnswer=false;state.lastAward=null;state.activeTeam=1;resetClock();});
+      else if(action==='reset' && window.confirm('Reiniciar a partida? Isso zerará pontos e respostas já reveladas.'))mutate(()=>{state.score1=0;state.score2=0;state.mode='round';state.round=0;state.r1=0;state.revealed=[];state.roundProgress={};state.r1Progress={};state.strikes=0;state.awarded=false;state.r1Awarded=false;state.r1ShowAnswer=false;state.r1Selected=null;state.lastAward=null;state.activeTeam=1;resetClock();});
     };
     controlMount?.addEventListener('click',handleControls);
     quickMount?.addEventListener('click',handleControls);
@@ -351,7 +352,7 @@
     controlMount?.addEventListener('input',event=>{const el=event.target;
       if(el.dataset.name){const pos=el.selectionStart;const value=el.value;mutate(()=>state[el.dataset.name]=value.slice(0,38));const field=controlMount.querySelector(`input[data-name="${el.dataset.name}"]`);if(field){field.focus();try{field.setSelectionRange(pos,pos)}catch(e){}}}
     });
-    gameMount?.addEventListener('click',event=>{const b=event.target.closest('button[data-answer]');if(!b||state.mode!=='round')return;mutate(()=>revealAndScore(+b.dataset.answer));});
+    gameMount?.addEventListener('click',event=>{const r1=event.target.closest('button[data-r1-option]');if(r1&&state.mode==='r1'&&!state.r1ShowAnswer){mutate(()=>{state.r1Selected=+r1.dataset.r1Option;state.r1Progress[state.r1]={shown:false,awarded:!!state.r1Awarded,selected:state.r1Selected};});return;}const b=event.target.closest('button[data-answer]');if(!b||state.mode!=='round')return;mutate(()=>revealAndScore(+b.dataset.answer));});
     document.addEventListener('keydown',event=>{if(!content || event.ctrlKey||event.altKey||event.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
       if(state.mode==='round' && /^[1-8]$/.test(event.key)){const i=+event.key-1;if(i<currentRound().answers.length&&!state.awarded)mutate(()=>revealAndScore(i));}
       else if(event.key.toLowerCase()==='x' && state.mode==='round')strikeAndSwitch();
