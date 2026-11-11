@@ -82,3 +82,10 @@
 @keyframes score-card-celebrate{0%{transform:scale(1)}30%{transform:scale(1.08)}60%{transform:scale(.995)}100%{transform:scale(1)}}
 @keyframes score-number-celebrate{0%{transform:scale(.7);opacity:.5}40%{transform:scale(1.19);opacity:1}100%{transform:scale(1);opacity:1}}
 @media(prefers-reduced-motion:reduce){.team-score.just-scored,.team-score.just-scored .score-number{animation:none}}
+
+
+/* Flip animado somente da nova resposta; demais cartões preservam o estado. */
+.answer-slot.newly-revealed .slot-inner{animation:answer-reveal-flip .83s cubic-bezier(.19,.8,.24,1) both}
+.answer-slot.newly-revealed .slot-back{box-shadow:0 0 30px #9ef3b7,inset 0 0 20px #a6ecc066;border-color:#a8f3a8}
+@keyframes answer-reveal-flip{0%{transform:rotateX(0deg) scale(.95)}45%{transform:rotateX(105deg) scale(1.07)}82%{transform:rotateX(192deg) scale(1.02)}100%{transform:rotateX(180deg) scale(1)}}
+@media(prefers-reduced-motion:reduce){.answer-slot.newly-revealed .slot-inner{animation:none}}
