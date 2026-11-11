@@ -78,7 +78,7 @@ with sync_playwright() as p:
     assert admin.locator('.score-number').nth(1).inner_text()=='10'
     assert admin.locator('.answer-slot.is-revealed').count()==1
     assert admin.locator('.answer-slot.newly-revealed').count()==1
-    assert admin.locator('.game-effect-award').count()==1
+    admin.locator('.game-effect-award').wait_for(timeout=6500)
     assert '10 PONTOS' in admin.locator('.game-effect-award').inner_text()
     assert admin.locator('.team-score.just-scored').count()==1
     assert '0 / 3' in admin.locator('.quick-strike-button').inner_text()
