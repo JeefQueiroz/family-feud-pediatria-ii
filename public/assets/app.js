@@ -129,13 +129,13 @@
     const previous={...state,revealed:[...state.revealed]};
     fn();
     detectGameEffect(previous,state);
-    if(pendingGameEffect){
-      const effect={...pendingGameEffect,id:(Number(state.rev)||0)+1};
+    const effect=pendingGameEffect?{...pendingGameEffect,id:(Number(state.rev)||0)+1}:null;
+    if(effect){
       state.effectHistory=[...(state.effectHistory||[]),effect].slice(-16);
       lastVisualEffectId=effect.id;
     }
     save();
-    if(pendingGameEffect)queueEffect({...pendingGameEffect});
+    if(effect)queueEffect(effect);
     pendingGameEffect=null;
   }
   function receive(next){
