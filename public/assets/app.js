@@ -6,7 +6,7 @@
   const isAdmin = document.body.dataset.page === 'admin';
   const gameMount = document.getElementById('game-mount');
   const controlMount = document.getElementById('control-mount');
-  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,rev:0});
+  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
   let state = initial();
   let content = null;
   let audioContext = null;
@@ -32,6 +32,10 @@
     base.team2=String(base.team2||'EQUIPE 2').slice(0,38);
     base.revealed=Array.isArray(base.revealed)?base.revealed:[];
     base.strikes=Math.max(0,Math.min(3,Number(base.strikes)||0));
+    base.activeTeam=[1,2].includes(+base.activeTeam)?+base.activeTeam:1;
+    base.timerRunning=!!base.timerRunning;
+    base.timerEnd=Math.max(0,Number(base.timerEnd)||0);
+    base.timerRemaining=Math.max(0,Math.min(10,Number(base.timerRemaining)||0));
     base.rev=Math.max(0,Number(base.rev)||0);
     return base;
   }
@@ -44,8 +48,19 @@
   }
   function mutate(fn){if(!isAdmin || !content || (!window.FFRemote?.available() || !window.FFRemote.canControl())) return; fn();save();}
   function receive(next){ if(!content || !next || +next.rev < +state.rev) return; state=normalize(next);render(); }
-  function changeRound(i){ mutate(()=>{state.mode='round';state.round=safeIndex(i,content.rounds.length);state.revealed=[];state.strikes=0;state.awarded=false;state.lastAward=null;}); }
-  function changeR1(i){ mutate(()=>{state.mode='r1';state.r1=safeIndex(i,content.r1.length);state.strikes=0;state.r1ShowAnswer=false;state.r1Awarded=false;state.lastAward=null;}); }
+  function secondsRemaining(){return state.timerRunning?Math.max(0,Math.ceil((state.timerEnd-Date.now())/1000)):state.timerRemaining;}
+  function resetClock(){state.timerRunning=false;state.timerEnd=0;state.timerRemaining=10;}
+  function clockStart(){mutate(()=>{state.timerRunning=true;state.timerEnd=Date.now()+Math.max(1,secondsRemaining())*1000;});}
+  function clockPause(){mutate(()=>{state.timerRemaining=secondsRemaining();state.timerRunning=false;state.timerEnd=0;});}
+  function clockReset(){mutate(()=>resetClock());}
+  function strikeAndSwitch(){mutate(()=>{
+    if(state.strikes>=3)return;
+    state.strikes=Math.min(3,state.strikes+1);
+    state.activeTeam=state.activeTeam===1?2:1;
+    resetClock();playSound('wrong');
+  });}
+  function changeRound(i){ mutate(()=>{state.mode='round';state.round=safeIndex(i,content.rounds.length);state.revealed=[];state.strikes=0;state.awarded=false;state.lastAward=null;resetClock();state.activeTeam=1;}); }
+  function changeR1(i){ mutate(()=>{state.mode='r1';state.r1=safeIndex(i,content.r1.length);state.strikes=0;state.r1ShowAnswer=false;state.r1Awarded=false;state.lastAward=null;resetClock();state.activeTeam=1;}); }
   function award(team){mutate(()=>{
     if (![1,2].includes(team)) return;
     if (state.mode==='round' && !state.awarded && pot()>0){
@@ -84,6 +99,11 @@
   function stageR1(){const q=currentR1();if(!q)return `<div class="waiting">Sem desafios.</div>`;
     return `<section class="stage"><div class="stage-kicker">QUEM QUER SER UM R1? <span>·</span> DESAFIO ${state.r1+1} / ${content.r1.length}</div><h2 class="stage-question">${esc(q.prompt)}</h2>${scoreMarkup()}<div class="r1-choices">${q.options.map((option,i)=>`<div class="r1-option ${state.r1ShowAnswer && i===q.correct?'correct':''} ${state.r1ShowAnswer && i!==q.correct?'muted':''}"><span class="letter">${'ABCD'[i]}</span><span>${esc(option)}</span>${state.r1ShowAnswer && i===q.correct?'<span class="tick">✓</span>':''}</div>`).join('')}</div><div class="stage-footer">${state.r1ShowAnswer?'<span class="good-answer">GABARITO REVELADO</span>':'<span>ESCOLHAM UMA ALTERNATIVA</span>'}<span>10 PONTOS POR ACERTO</span></div></section>`;}
   function stage(){return state.mode==='r1'?stageR1():stageRound();}
+  function updateClockLabels(){
+    document.querySelectorAll('[data-timer-display]').forEach(node=>node.textContent=String(secondsRemaining()));
+    document.querySelectorAll('[data-team-display]').forEach(node=>node.textContent=state.team1 && state.team2 ? (state.activeTeam===1?state.team1:state.team2) : 'Equipe '+state.activeTeam);
+  }
+  setInterval(updateClockLabels,250);
   function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin)renderAdmin();}
   function renderAdmin(){
     if(!window.FFRemote?.available() || !window.FFRemote.canControl()){
@@ -95,6 +115,7 @@
     const completed=isRound?state.awarded:state.r1Awarded;
     const canAward=isRound?pot()>0&&!completed:state.r1ShowAnswer&&!completed;
     controlMount.innerHTML=`<div class="panel-title"><div><div class="eyebrow">CENTRAL DE CONTROLE</div><h2>Painel do apresentador</h2></div><span class="pill">${content.rounds.length} + ${content.r1.length}</span></div>
+    ${isRound?'<div class="control-group"><div class="row-heading"><h3>Turno: <span data-team-display></span></h3><span class="pill"><span data-timer-display>10</span> segundos</span></div><div class="button-row"><button class="button primary" data-action="timer-start">Iniciar 10s</button><button class="button secondary" data-action="timer-pause">Pausar</button><button class="button secondary" data-action="timer-reset">Reiniciar</button></div></div>':''}
     <div class="tabs"><button data-action="mode-round" class="${isRound?'active':''}">Family Feud</button><button data-action="mode-r1" class="${!isRound?'active':''}">Quem quer ser um R1?</button></div>
     <div class="control-group"><label class="small-label" for="question-picker">${isRound?'Rodada e tema':'Questão prática'}</label><select id="question-picker" data-select="${isRound?'round':'r1'}">${(isRound?content.rounds:content.r1).map((x,i)=>`<option value="${i}" ${(isRound?state.round:state.r1)===i?'selected':''}>${i+1}. ${esc(x.title)}</option>`).join('')}</select><div class="button-row"><button data-action="prev" class="button secondary">← Anterior</button><button data-action="next" class="button secondary">Próxima →</button></div></div>
     <div class="control-group"><div class="row-heading"><h3>Equipes</h3><span class="muted-text">Placar acumulado</span></div><div class="team-inputs"><label>Equipe 1<input data-name="team1" maxlength="38" value="${esc(state.team1)}"></label><label>Equipe 2<input data-name="team2" maxlength="38" value="${esc(state.team2)}"></label></div><div class="manual-scores"><div><button class="tiny" data-action="score1-minus">−10</button><b>${state.score1}</b><button class="tiny" data-action="score1-plus">+10</button></div><div><button class="tiny" data-action="score2-minus">−10</button><b>${state.score2}</b><button class="tiny" data-action="score2-plus">+10</button></div></div></div>
@@ -114,11 +135,14 @@
       else if(action==='mode-r1')changeR1(state.r1);
       else if(action==='prev')state.mode==='round'?changeRound((state.round+content.rounds.length-1)%content.rounds.length):changeR1((state.r1+content.r1.length-1)%content.r1.length);
       else if(action==='next')state.mode==='round'?changeRound((state.round+1)%content.rounds.length):changeR1((state.r1+1)%content.r1.length);
-      else if(action==='answer')mutate(()=>{if(state.awarded)return;const i=+button.dataset.index;state.revealed=state.revealed.includes(i)?state.revealed.filter(x=>x!==i):[...state.revealed,i];if(state.revealed.includes(i))playSound('correct');});
-      else if(action==='reveal-all')mutate(()=>{if(!state.awarded)state.revealed=currentRound().answers.map((_,i)=>i);});
+      else if(action==='answer')mutate(()=>{if(state.awarded)return;const i=+button.dataset.index;state.revealed=state.revealed.includes(i)?state.revealed.filter(x=>x!==i):[...state.revealed,i];if(state.revealed.includes(i)){state.strikes=0;resetClock();playSound('correct');}});
+      else if(action==='reveal-all')mutate(()=>{if(!state.awarded){state.revealed=currentRound().answers.map((_,i)=>i);state.strikes=0;resetClock();}});
       else if(action==='hide-all')mutate(()=>{if(!state.awarded)state.revealed=[];});
       else if(action==='multiplier')mutate(()=>{if(!state.awarded)state.multiplier=+button.dataset.mult;});
-      else if(action==='strike')mutate(()=>{state.strikes=Math.min(3,state.strikes+1);playSound('wrong');});
+      else if(action==='strike')strikeAndSwitch();
+      else if(action==='timer-start')clockStart();
+      else if(action==='timer-pause')clockPause();
+      else if(action==='timer-reset')clockReset();
       else if(action==='clear-strikes')mutate(()=>state.strikes=0);
       else if(action==='show-r1')mutate(()=>{if(!state.r1Awarded)state.r1ShowAnswer=!state.r1ShowAnswer;});
       else if(action==='award1')award(1);
@@ -134,10 +158,10 @@
     controlMount?.addEventListener('input',event=>{const el=event.target;
       if(el.dataset.name){const pos=el.selectionStart;const value=el.value;mutate(()=>state[el.dataset.name]=value.slice(0,38));const field=controlMount.querySelector(`input[data-name="${el.dataset.name}"]`);if(field){field.focus();try{field.setSelectionRange(pos,pos)}catch(e){}}}
     });
-    gameMount?.addEventListener('click',event=>{const b=event.target.closest('button[data-answer]');if(!b || state.mode!=='round'||state.awarded)return;const index=+b.dataset.answer;mutate(()=>state.revealed=state.revealed.includes(index)?state.revealed.filter(x=>x!==index):[...state.revealed,index]);});
+    gameMount?.addEventListener('click',event=>{const b=event.target.closest('button[data-answer]');if(!b || state.mode!=='round'||state.awarded)return;const index=+b.dataset.answer;mutate(()=>{if(!state.revealed.includes(index)){state.strikes=0;resetClock();}state.revealed=state.revealed.includes(index)?state.revealed.filter(x=>x!==index):[...state.revealed,index];});});
     document.addEventListener('keydown',event=>{if(!content || event.ctrlKey||event.altKey||event.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
-      if(state.mode==='round' && /^[1-8]$/.test(event.key)){const i=+event.key-1;if(i<currentRound().answers.length&&!state.awarded)mutate(()=>state.revealed=state.revealed.includes(i)?state.revealed.filter(x=>x!==i):[...state.revealed,i]);}
-      else if(event.key.toLowerCase()==='x' && state.mode==='round')mutate(()=>state.strikes=Math.min(3,state.strikes+1));
+      if(state.mode==='round' && /^[1-8]$/.test(event.key)){const i=+event.key-1;if(i<currentRound().answers.length&&!state.awarded)mutate(()=>{if(!state.revealed.includes(i)){state.strikes=0;resetClock();}state.revealed=state.revealed.includes(i)?state.revealed.filter(x=>x!==i):[...state.revealed,i];});}
+      else if(event.key.toLowerCase()==='x' && state.mode==='round')strikeAndSwitch();
       else if(event.key==='ArrowRight')state.mode==='round'?changeRound((state.round+1)%content.rounds.length):changeR1((state.r1+1)%content.r1.length);
       else if(event.key==='ArrowLeft')state.mode==='round'?changeRound((state.round+content.rounds.length-1)%content.rounds.length):changeR1((state.r1+content.r1.length-1)%content.r1.length);
     });
