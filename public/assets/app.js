@@ -169,7 +169,7 @@
       });
     }catch(e){ console.warn('Áudio não disponível',e); }
   }
-  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length}`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
+  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===1?'just-scored':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length}`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===2?'just-scored':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
   function effectsMarkup(){
     if(!pendingGameEffect)return '';
     const effect=pendingGameEffect;
@@ -223,7 +223,7 @@
       <p class="quick-hint">${round?'Selecione a equipe e toque no número de uma resposta oculta. +10 pontos automaticamente.':'Desafio prático: revele o gabarito e conceda os pontos no painel.'}</p>
     </div>`;
   }
-  function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin){renderQuickControls();renderAdmin();}}
+  function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin){renderQuickControls();renderAdmin();}pendingGameEffect=null;}
   function renderAdmin(){
     if(!window.FFRemote?.available() || !window.FFRemote.canControl()){
       if(window.FFRemote) window.FFRemote.renderLogin(controlMount);
