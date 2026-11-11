@@ -1,6 +1,6 @@
 # Family Feud — Pediatria II
 
-Jogo de monitoria de semiologia pediátrica. Usa apenas as **7 rodadas aprovadas (56 respostas)** e **5 desafios R1**, sem perguntas preexistentes em inglês.
+Jogo de monitoria de semiologia pediátrica. Usa apenas as **6 rodadas aprovadas (48 respostas)** e **5 desafios R1**, sem perguntas preexistentes em inglês.
 
 ## Funcionamento
 
