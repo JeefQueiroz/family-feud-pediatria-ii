@@ -1,67 +1,60 @@
 # Family Feud — Pediatria II
 
-Aplicativo de monitoria com conteúdo autorizado do roteiro fornecido: **somente seis rodadas (47 respostas) e cinco questões práticas (Quem quer ser um R1?)**. Os CSVs antigos e todas as perguntas preexistentes em inglês foram excluídos desta distribuição.
+Jogo de monitoria de semiologia pediátrica. Usa apenas as **7 rodadas aprovadas (55 respostas)** e **5 desafios R1**, sem perguntas preexistentes em inglês.
 
-## Regras
+## Funcionamento
 
-- Respostas de Family Feud: **10 pontos por acerto**. Multiplicadores opcionais 1×, 2× ou 3×.
-- R1: **10 pontos por acerto**, sem multiplicador.
-- A pontuação de cada rodada pode ser concedida uma vez para uma equipe e desfeita.
-- Cada rodada contém até oito respostas. O painel exibe oito posições.
+- Cada resposta inédita revelada pelo apresentador soma **10 pontos automaticamente à equipe selecionada**. Não há multiplicador de pontuação.
+- Respostas reveladas ficam salvas por rodada para impedir pontuação duplicada ao navegar e voltar.
+- Acerto: revela o cartão e zera os erros. Erro: registra ✕ e alterna o time. Até 3 erros antes do próximo acerto.
+- Cronômetro de **10 segundos**, com iniciar, pausar, retomar, reiniciar e encerramento ao chegar a zero.
+- Desafio R1: mostra quatro alternativas e dá 10 pontos manualmente após revelar o gabarito. Cada R1 só pode ser premiado uma vez.
+- Na TV, o time ativo aparece destacado, com contador e efeitos sonoros; um primeiro clique ou toque pode ser necessário para permitir áudio, conforme navegador.
+- **Desfazer último acerto** funciona dentro da rodada atual. **Reiniciar partida** limpa placares e respostas e exige confirmação.
 
-As respostas dos painéis são categorias didáticas, não resultados de pesquisa com público. O apresentador decide quando uma resposta dada se enquadra em uma categoria.
+## Acessos
 
-## Executar
+TV/projetor: https://family-feud26.vercel.app/
 
-```bash
-python3 -m http.server 4173 -d public
-```
+Painel do apresentador (iPhone/computador): https://family-feud26.vercel.app/admin/
 
-Abra `http://localhost:4173/` (tela de projeção) e `http://localhost:4173/admin/` (controle) **em abas do mesmo navegador**. Atalhos no admin: teclas 1–8 revelam as respostas, `X` registra erro, setas alternam questões.
+O painel é protegido por **PIN de 6 dígitos**, validado por uma Supabase Edge Function. Não é preciso cadastrar e-mail/senha. O PIN nunca deve ser incorporado ao código do navegador.
 
-> Atenção: o sincronismo usa BroadcastChannel e localStorage do navegador, e **não funciona entre máquinas diferentes**. O controle administrativo não tem autenticação; não deve ser exposto publicamente sem proteção.
+O Supabase Realtime transmite alterações de estado entre dispositivos diferentes. A TV tem somente leitura; gravações passam pela Edge Function e suas verificações. A conexão precisa estar disponível. O painel exibe o estado da sincronização, inclusive erros de salvamento.
 
-## Alterar perguntas aprovadas
+O jogo é didático, não um serviço clínico. Evite dados pessoais de pacientes.
 
-Modifique apenas `questions/approved.csv` para as rodadas; `questions/metadata.json` contém detalhes e notas; `questions/r1.json` contém as cinco questões práticas.
+## Dados
+
+- `questions/approved.csv`: perguntas e respostas aprovadas
+- `questions/metadata.json`: detalhes das respostas e notas
+- `questions/r1.json`: questões R1
+- `scripts/build_questions.py`: valida e compila os arquivos para `public/data.json`
+
+As categorias são respostas didáticas definidas no roteiro, não resultados de pesquisa com uma população.
+
+## Testes e build
 
 ```bash
 python3 scripts/build_questions.py
 python3 -m unittest discover -s tests -v
+node --check public/assets/app.js
+node --check public/assets/remote-sync.js
+python3 -m pip install playwright
+python3 -m playwright install chromium
+python3 tests/browser_check.py
 ```
 
-O compilador gera `public/data.json` **apenas a partir** do CSV aprovado e do JSON do R1. O arquivo original de 3.919 perguntas não existe neste pacote.
+O GitHub Actions executa essas verificações automaticamente. O teste de navegador usa transporte remoto simulado: confirma interface, cronômetro, navegação, placares e TV, mas **não substitui um teste real de sincronização entre iPhone e projetor nem de disponibilidade do Supabase**.
 
-## Publicação (GitHub JeefQueiroz + Vercel Euvouserdoutor)
+## Publicação
 
-O conector do GitHub disponível nesta conversa não possui operação de criação de repositórios. O conector Vercel retornou **403 forbidden** na criação do projeto na equipe `euvouserdoutorrs-projects`. **A publicação não foi realizada automaticamente.**
+Repositório: `JeefQueiroz/family-feud-pediatria-ii`
 
-Para publicar no Mac autenticado nas duas contas, execute na pasta extraída:
+Vercel: equipe `euvouserdoutorrs-projects`, projeto `family-feud-pediatria-ii`; publicação via branch `main`.
 
-```bash
-bash deploy-mac.sh
-```
+A branch `feature/supabase-remote-control` é para testes. Deployments de Preview podem exigir autenticação Vercel, dependendo das configurações da equipe; isso não significa falha do aplicativo.
 
-O script valida os dados, cria um **novo repositório privado** `JeefQueiroz/family-feud-pediatria-ii`, envia os arquivos, cria/vincula o projeto Vercel na equipe `euvouserdoutorrs-projects`, conecta a integração GitHub e publica a produção. Ele interrompe se detectar conta errada, repositório remoto divergente ou falta de permissão; não modifica sites existentes.
+## Conteúdo
 
-Requisitos: `git`, `gh` autenticado em `JeefQueiroz`, `python3` e Vercel CLI ou `npx` autenticado em `Euvouserdoutor`. Caso a Vercel continue retornando `403`, o titular da equipe precisa liberar a permissão de criar projetos. Não é possível completar uma publicação sem essa autorização.
-
-**Atenção:** a página `/admin/` não tem autenticação e o `BroadcastChannel` sincroniza somente abas/dispositivos no mesmo navegador/perfil e origem, não dois computadores independentes. Um link público da TV não significa controle remoto do painel administrativo. Evite usar informações sensíveis no aplicativo estático.
-
-## Testes
-
-`python3 -m unittest discover -s tests -v` valida conteúdo e pontuações. `python3 tests/browser_check.py` executa teste offline do painel no Chromium/Playwright (exige dependências de teste locais). O teste offline não prova sincronia em rede nem funcionamento de deploy.
-
-## Origem
-
-Os textos clínicos e gabaritos foram adaptados do roteiro de monitoria fornecido pelo usuário, preservado em `docs/roteiro-original.txt`. A interface é uma implementação web independente, não inclui código, marcas gráficas ou materiais licenciados do programa televisivo.
-
-## Conferência da inclusão após publicação
-
-O script de deploy agora valida **o conteúdo realmente servido pela Vercel**, comparando `/data.json` ao arquivo aprovado local, e confere `/`, `/admin/`, JavaScript e CSS. Em qualquer divergência, interrompe com erro, sem declarar sucesso. A verificação também pode ser executada manualmente:
-
-```bash
-python3 scripts/verify_publication.py https://URL-DO-SEU-DEPLOY.vercel.app
-```
-
-A checagem confirma arquivos acessíveis naquele endereço, mas não substitui o teste de sincronismo de múltiplos dispositivos ou a proteção de acesso ao painel administrativo.
+O roteiro-fonte foi preservado em `docs/roteiro-original.txt`. Os textos de semiologia foram adaptados para dinâmica didática. A interface não incorpora conteúdo protegido ou a marca gráfica do programa de televisão.
