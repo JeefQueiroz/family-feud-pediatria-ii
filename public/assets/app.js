@@ -6,6 +6,7 @@
   const isAdmin = document.body.dataset.page === 'admin';
   const gameMount = document.getElementById('game-mount');
   const controlMount = document.getElementById('control-mount');
+  const quickMount = document.getElementById('presenter-quick-controls');
   const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
   let state = initial();
   let content = null;
@@ -113,7 +114,26 @@
     document.querySelectorAll('[data-team-display]').forEach(node=>node.textContent=state.team1 && state.team2 ? (state.activeTeam===1?state.team1:state.team2) : 'Equipe '+state.activeTeam);
   }
   setInterval(updateClockLabels,250);
-  function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin)renderAdmin();}
+
+  function renderQuickControls(){
+    if(!quickMount)return;
+    if(!window.FFRemote?.canControl()){quickMount.innerHTML='';return;}
+    const round=state.mode==='round';
+    quickMount.innerHTML=`<div class="quick-toolbar">
+      <div class="quick-navigation">
+        <button class="button secondary" data-action="prev">← Anterior</button>
+        <button class="button ${round?'primary':'secondary'}" data-action="mode-round">Family Feud</button>
+        <button class="button ${!round?'primary':'secondary'}" data-action="mode-r1">Quem quer ser um R1?</button>
+        <button class="button secondary" data-action="next">Próxima →</button>
+      </div>
+      <div class="quick-team-switch" role="group" aria-label="Selecionar equipe">
+        <button class="quick-team ${state.activeTeam===1?'active':''}" data-action="select-team1" aria-pressed="${state.activeTeam===1}"><span>${esc(state.team1)}</span><strong>${state.score1}</strong></button>
+        <button class="quick-team ${state.activeTeam===2?'active':''}" data-action="select-team2" aria-pressed="${state.activeTeam===2}"><span>${esc(state.team2)}</span><strong>${state.score2}</strong></button>
+      </div>
+      <p class="quick-hint">${round?'Selecione a equipe e toque no número de uma resposta oculta. +10 pontos automaticamente.':'Desafio prático: revele o gabarito e conceda os pontos no painel.'}</p>
+    </div>`;
+  }
+  function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin){renderQuickControls();renderAdmin();}}
   function renderAdmin(){
     if(!window.FFRemote?.available() || !window.FFRemote.canControl()){
       if(window.FFRemote) window.FFRemote.renderLogin(controlMount);
@@ -129,15 +149,15 @@
     <div class="control-group"><label class="small-label" for="question-picker">${isRound?'Rodada e tema':'Questão prática'}</label><select id="question-picker" data-select="${isRound?'round':'r1'}">${(isRound?content.rounds:content.r1).map((x,i)=>`<option value="${i}" ${(isRound?state.round:state.r1)===i?'selected':''}>${i+1}. ${esc(x.title)}</option>`).join('')}</select><div class="button-row"><button data-action="prev" class="button secondary">← Anterior</button><button data-action="next" class="button secondary">Próxima →</button></div></div>
     ${isRound?`<div class="control-group"><div class="row-heading"><h3>Equipe que recebe os pontos</h3><span class="pill">+10 por resposta inédita</span></div><div class="button-row"><button type="button" class="button ${state.activeTeam===1?'primary':'secondary'}" data-action="select-team1" aria-pressed="${state.activeTeam===1}">${esc(state.team1)}</button><button type="button" class="button ${state.activeTeam===2?'primary':'secondary'}" data-action="select-team2" aria-pressed="${state.activeTeam===2}">${esc(state.team2)}</button></div></div>` : ''}
     <div class="control-group"><div class="row-heading"><h3>Equipes</h3><span class="muted-text">Placar acumulado</span></div><div class="team-inputs"><label>Equipe 1<input data-name="team1" maxlength="38" value="${esc(state.team1)}"></label><label>Equipe 2<input data-name="team2" maxlength="38" value="${esc(state.team2)}"></label></div><div class="manual-scores"><div><button class="tiny" data-action="score1-minus">−10</button><b>${state.score1}</b><button class="tiny" data-action="score1-plus">+10</button></div><div><button class="tiny" data-action="score2-minus">−10</button><b>${state.score2}</b><button class="tiny" data-action="score2-plus">+10</button></div></div></div>
-    ${isRound?`<div class="control-group"><div class="row-heading"><h3>Respostas</h3><span class="pill">${validRevealed().length} / ${q.answers.length}</span></div><p class="muted-text">Toque em uma resposta oculta para revelá-la e somar 10 pontos à equipe selecionada.</p><div class="host-answers">${q.answers.map((a,i)=>`<button class="host-answer ${state.revealed.includes(i)?'selected':''}" data-action="answer" data-index="${i}" ${completed||state.revealed.includes(i)?'disabled':''}><span>${i+1}. ${esc(a.label)}</span><b>${state.revealed.includes(i)?'✓':'Revelar'}</b></button>`).join('')}</div></div><div class="control-group"><div class="row-heading"><h3>Multiplicador</h3><span class="muted-text">Somente Family Feud</span></div><div class="multiplier-row">${[1,2,3].map(m=>`<button data-action="multiplier" data-mult="${m}" class="${state.multiplier===m?'active':''}" ${completed?'disabled':''}>${m}×</button>`).join('')}</div><div class="button-row"><button class="button danger" data-action="strike" ${state.strikes>=3?'disabled':''}>Erro ✕ (${state.strikes}/3)</button><button class="button secondary" data-action="clear-strikes">Limpar erros</button></div></div>`:
+    ${isRound?`<div class="control-group"><div class="row-heading"><h3>Respostas</h3><span class="pill">${validRevealed().length} / ${q.answers.length}</span></div><p class="muted-text">Toque em uma resposta oculta para revelá-la e somar 10 pontos à equipe selecionada.</p><div class="host-answers">${q.answers.map((a,i)=>`<button class="host-answer ${state.revealed.includes(i)?'selected':''}" data-action="answer" data-index="${i}" ${completed||state.revealed.includes(i)?'disabled':''}><span>${i+1}. ${esc(a.label)}</span><b>${state.revealed.includes(i)?'✓':'Revelar'}</b></button>`).join('')}</div></div><div class="control-group"><h3>Erros da rodada</h3><div class="button-row"><button class="button danger" data-action="strike" ${state.strikes>=3?'disabled':''}>Erro ✕ (${state.strikes}/3)</button><button class="button secondary" data-action="clear-strikes">Limpar erros</button></div></div>`:
     `<div class="control-group"><h3>Gabarito da questão</h3><p class="muted-text">A equipe escolhe a alternativa. Revele o gabarito somente após as respostas.</p><button class="button ${state.r1ShowAnswer?'secondary':'primary'} full" data-action="show-r1">${state.r1ShowAnswer?'Ocultar gabarito':'Revelar gabarito'}</button><div class="answer-key">Resposta: <b>${'ABCD'[q.correct]} — ${esc(q.options[q.correct])}</b></div><details><summary>Explicação para o apresentador</summary><p>${esc(q.explanation)}</p></details></div>`}
     <div class="control-group award-group"><h3>${isRound?'Correções':'Conceder pontos'}</h3>${!isRound?`<p class="muted-text">Questão prática: 10 pontos quando a equipe acertar.</p><div class="button-row"><button data-action="award1" class="button primary" ${!canAward?'disabled':''}>+10 · ${esc(state.team1)}</button><button data-action="award2" class="button gold" ${!canAward?'disabled':''}>+10 · ${esc(state.team2)}</button></div>`:''}<div class="button-row"><button data-action="undo" class="button secondary" ${!state.lastAward?'disabled':''}>Desfazer último acerto</button><button data-action="reset" class="button danger-outline">Zerar placares</button></div>${completed?'<div class="success">Pontuação registrada. Avance para a próxima questão.</div>':''}</div>
     <details class="notes"><summary>Notas da apresentação</summary><p>${esc(isRound?q.notes:q.explanation)}</p>${isRound?`<ol>${q.answers.map((a)=>`<li><b>${esc(a.label)}</b>: ${esc(a.detail)}</li>`).join('')}</ol>`:''}</details>
-    <p class="privacy-note">Esta página não exige login. Não divulgue o endereço do painel administrativo sem proteção de acesso.</p>`;
+    <p class="privacy-note">Acesso ao painel protegido por PIN do apresentador.</p>`;
   }
   if(isAdmin){
     controlMount?.addEventListener('submit',event=>window.FFRemote?.handleSubmit(event));
-    controlMount?.addEventListener('click',event=>{
+    const handleControls = event=>{
       if(event.target.closest('[data-auth-logout]')){window.FFRemote?.logout();return;}
       const button=event.target.closest('button[data-action]');if(!button || button.disabled || !content)return;
       const action=button.dataset.action;
@@ -150,7 +170,7 @@
       else if(action==='select-team2')mutate(()=>state.activeTeam=2);
 
 
-      else if(action==='multiplier')mutate(()=>{if(!state.awarded)state.multiplier=+button.dataset.mult;});
+
       else if(action==='strike')strikeAndSwitch();
       else if(action==='timer-start')clockStart();
       else if(action==='timer-pause')clockPause();
@@ -162,7 +182,9 @@
       else if(action==='undo')undoAward();
       else if(action.startsWith('score'))mutate(()=>{const team=action.includes('score1')?1:2;const amount=action.endsWith('plus')?10:-10;state['score'+team]=Math.max(0,state['score'+team]+amount);});
       else if(action==='reset' && window.confirm('Zerar os dois placares?'))mutate(()=>{state.score1=0;state.score2=0;state.awarded=false;state.r1Awarded=false;state.lastAward=null;});
-    });
+    };
+    controlMount?.addEventListener('click',handleControls);
+    quickMount?.addEventListener('click',handleControls);
     controlMount?.addEventListener('change',event=>{const el=event.target;
       if(el.dataset.select==='round')changeRound(+el.value);
       if(el.dataset.select==='r1')changeR1(+el.value);
