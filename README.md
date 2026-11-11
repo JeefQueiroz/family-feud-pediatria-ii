@@ -1,6 +1,6 @@
 # Family Feud — Pediatria II
 
-Jogo de monitoria de semiologia pediátrica. Usa apenas as **7 rodadas aprovadas (55 respostas)** e **5 desafios R1**, sem perguntas preexistentes em inglês.
+Jogo de monitoria de semiologia pediátrica. Usa apenas as **7 rodadas aprovadas (56 respostas)** e **5 desafios R1**, sem perguntas preexistentes em inglês.
 
 ## Funcionamento
 
@@ -58,3 +58,11 @@ A branch `feature/supabase-remote-control` é para testes. Deployments de Previe
 ## Conteúdo
 
 O roteiro-fonte foi preservado em `docs/roteiro-original.txt`. Os textos de semiologia foram adaptados para dinâmica didática. A interface não incorpora conteúdo protegido ou a marca gráfica do programa de televisão.
+
+### Referência clínica para a resposta 8 da sexta rodada
+
+**Avaliação inguinal e pesquisa de hérnias**: a inspeção inguinal faz parte da avaliação abdominal pediátrica. Fontes clínicas:
+- NSW Health, *Paediatric abdominal assessment*: https://aci.health.nsw.gov.au/ecat/paediatric/assessment/abdominal
+- Royal Children's Hospital Melbourne, *Abdominal pain — acute*: https://www.rch.org.au/clinicalguide/guideline_index/Abdominal_pain_-_acute/
+
+Esta resposta é um item adicional de avaliação dirigida à região inguinal, e não implica que toda criança necessite de manobras invasivas.
