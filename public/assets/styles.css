@@ -101,3 +101,18 @@
 /* Efeitos fora do tabuleiro para não serem cortados por novas atualizações da TV. */
 body > .game-effect{position:fixed;inset:auto;top:48%;left:50%;z-index:10000;pointer-events:none;max-width:680px}
 @media(prefers-reduced-motion:reduce){.next-team-button{transition:none}}
+
+/* R1: a alternativa escolhida vira na TV e no painel; o gabarito vira todas. */
+.r1-option{position:relative;display:block;padding:0;background:transparent;border:0;perspective:1000px;min-height:104px;color:inherit;text-align:left;box-shadow:none;overflow:visible}
+button.r1-option{width:100%;cursor:pointer}
+.r1-option-inner{position:relative;display:block;width:100%;min-height:104px;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.25,.7,.22,1.1)}
+.r1-option.is-flipped .r1-option-inner{transform:rotateX(180deg)}
+.r1-option-front,.r1-option-back{position:absolute;inset:0;display:flex;align-items:center;gap:16px;min-height:104px;padding:12px 18px;border:2px solid #d6a84fba;border-radius:14px;background:linear-gradient(160deg,#165c9a,#092f60);backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 5px 22px #0005}
+.r1-option-back{transform:rotateX(180deg);border-color:var(--gold);background:linear-gradient(160deg,#34558d,#123057)}
+.r1-option.correct .r1-option-back{border:3px solid var(--green);background:linear-gradient(160deg,#1a6644,#0b3932)}
+.r1-option.is-selected:not(.correct) .r1-option-back{border-color:var(--gold-light);box-shadow:0 0 18px #d6a84f88}
+.r1-option.muted{opacity:.6}
+.r1-option .tick{margin-left:auto}
+.preview-column .r1-option,.preview-column .r1-option-inner,.preview-column .r1-option-front,.preview-column .r1-option-back{min-height:105px}
+@media(max-width:660px){.r1-option,.r1-option-inner,.r1-option-front,.r1-option-back{min-height:65px}.r1-option-front,.r1-option-back{padding:8px;gap:10px}}
+@media(prefers-reduced-motion:reduce){.r1-option-inner{transition:none}}
