@@ -51,7 +51,7 @@
   function receive(next){ if(!content || !next || +next.rev < +state.rev) return; state=normalize(next);render(); }
   function secondsRemaining(){return state.timerRunning?Math.max(0,Math.ceil((state.timerEnd-Date.now())/1000)):state.timerRemaining;}
   function resetClock(){state.timerRunning=false;state.timerEnd=0;state.timerRemaining=10;}
-  function clockStart(){mutate(()=>{state.timerRunning=true;state.timerEnd=Date.now()+Math.max(1,secondsRemaining())*1000;});}
+  function clockStart(){mutate(()=>{if(state.timerRunning)return;const remaining=secondsRemaining();const seconds=remaining>0?remaining:10;state.timerRemaining=seconds;state.timerEnd=Date.now()+seconds*1000;state.timerRunning=true;});}
   function clockPause(){mutate(()=>{state.timerRemaining=secondsRemaining();state.timerRunning=false;state.timerEnd=0;});}
   function clockReset(){mutate(()=>resetClock());}
   function strikeAndSwitch(){mutate(()=>{
