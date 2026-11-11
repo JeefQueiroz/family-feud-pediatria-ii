@@ -75,5 +75,18 @@
       "Pesquisa de fígado, baço e rins.",
       "Irritação peritoneal, apendicite, colecistite, ascite e rim, conforme hipótese."
     ]
+  },
+  "sgi-manobras": {
+    "notes": "Selecionar manobras conforme a hipótese clínica, a idade e o conforto da criança; evitar manobras dolorosas desnecessárias. Nenhum sinal isolado confirma apendicite, colecistite, doença renal ou ascite.",
+    "details": [
+      "Dor à descompressão brusca pode sugerir irritação peritoneal; evitar repetição dolorosa em crianças.",
+      "Dor inspiratória à palpação do hipocôndrio direito pode sugerir irritação da vesícula biliar.",
+      "Dor na fossa ilíaca direita provocada pela palpação da fossa ilíaca esquerda pode ocorrer na apendicite.",
+      "Dor com manobra envolvendo o músculo psoas pode apoiar suspeita de irritação adjacente.",
+      "Dor provocada pela rotação interna da coxa flexionada pode apoiar suspeita de irritação pélvica.",
+      "Sensibilidade à punho-percussão suave do ângulo costovertebral sugere possível acometimento renal.",
+      "Mudança da região de macicez à percussão com o decúbito pode sugerir ascite.",
+      "Posicionamento em decúbito lateral direito para facilitar a palpação do baço quando indicado."
+    ]
   }
 }

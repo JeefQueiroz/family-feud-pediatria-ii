@@ -62,7 +62,18 @@ rounds=[
 ('Palpação profunda','Massas, vísceras e pontos dolorosos.'),
 ('Visceromegalias','Pesquisa de fígado, baço e rins.'),
 ('Manobras específicas','Irritação peritoneal, apendicite, colecistite, ascite e rim, conforme hipótese.')],
-'Ordem: inspeção → ausculta → percussão → palpação. Acolher a criança, aquecer as mãos e começar longe da região dolorosa. Baço palpável em escolar exige correlação clínica e investigação quando indicado.')]
+'Ordem: inspeção → ausculta → percussão → palpação. Acolher a criança, aquecer as mãos e começar longe da região dolorosa. Baço palpável em escolar exige correlação clínica e investigação quando indicado.'),
+('sgi-manobras','06',"Sinais e manobras abdominais","Quais sinais e manobras semiológicas podem auxiliar na avaliação abdominal de uma criança escolar?",[
+("Sinal de Blumberg","Dor à descompressão brusca pode sugerir irritação peritoneal; evitar repetição dolorosa em crianças."),
+("Sinal de Murphy","Dor inspiratória à palpação do hipocôndrio direito pode sugerir irritação da vesícula biliar."),
+("Sinal de Rovsing","Dor na fossa ilíaca direita provocada pela palpação da fossa ilíaca esquerda pode ocorrer na apendicite."),
+("Sinal do psoas","Dor com manobra envolvendo o músculo psoas pode apoiar suspeita de irritação adjacente."),
+("Sinal do obturador","Dor provocada pela rotação interna da coxa flexionada pode apoiar suspeita de irritação pélvica."),
+("Sinal de Giordano","Sensibilidade à punho-percussão suave do ângulo costovertebral sugere possível acometimento renal."),
+("Pesquisa de macicez móvel","Mudança da região de macicez à percussão com o decúbito pode sugerir ascite."),
+("Manobra de Schuster","Posicionamento em decúbito lateral direito para facilitar a palpação do baço quando indicado.")],
+"Selecionar manobras conforme a hipótese clínica, a idade e o conforto da criança; evitar manobras dolorosas desnecessárias. Nenhum sinal isolado confirma apendicite, colecistite, doença renal ou ascite.")
+]
 practice=[
 {'id':'r1-01','title':'Pesquisa de irritação peritoneal','prompt':'Qual manobra pesquisa dor à descompressão brusca em criança com suspeita de irritação peritoneal?','options':['Sinal de Giordano','Manobra de Schuster','Sinal de Blumberg','Sinal de Murphy'],'correct':2,'explanation':'Sinal de Blumberg: dor mais intensa à descompressão do que à compressão sugere irritação peritoneal. Em crianças, evitar repetir manobras dolorosas; interpretar conforme contexto clínico.'},
 {'id':'r1-02','title':'Hepatimetria','prompt':'Como avaliar o tamanho do fígado por percussão?','options':['Percutir exclusivamente hipocôndrio esquerdo','Delimitar limites superior e inferior da macicez e medir a distância','Fazer apenas palpação profunda do hipocôndrio direito','Percutir região umbilical até achar macicez'],'correct':1,'explanation':'Usualmente na linha hemiclavicular direita: marcar limite superior onde som pulmonar vira macicez, inferior onde som abdominal vira macicez; medir distância. Referências devem ser pediátricas.'},

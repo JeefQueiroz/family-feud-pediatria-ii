@@ -290,6 +290,55 @@
         }
       ],
       "notes": "Ordem: inspeção → ausculta → percussão → palpação. Acolher a criança, aquecer as mãos e começar longe da região dolorosa. Baço palpável em escolar exige correlação clínica e investigação quando indicado."
+    },
+    {
+      "id": "sgi-manobras",
+      "block": "06",
+      "title": "Sinais e manobras abdominais",
+      "question": "Quais sinais e manobras semiológicas podem auxiliar na avaliação abdominal de uma criança escolar?",
+      "answers": [
+        {
+          "label": "Sinal de Blumberg",
+          "detail": "Dor à descompressão brusca pode sugerir irritação peritoneal; evitar repetição dolorosa em crianças.",
+          "points": 10
+        },
+        {
+          "label": "Sinal de Murphy",
+          "detail": "Dor inspiratória à palpação do hipocôndrio direito pode sugerir irritação da vesícula biliar.",
+          "points": 10
+        },
+        {
+          "label": "Sinal de Rovsing",
+          "detail": "Dor na fossa ilíaca direita provocada pela palpação da fossa ilíaca esquerda pode ocorrer na apendicite.",
+          "points": 10
+        },
+        {
+          "label": "Sinal do psoas",
+          "detail": "Dor com manobra envolvendo o músculo psoas pode apoiar suspeita de irritação adjacente.",
+          "points": 10
+        },
+        {
+          "label": "Sinal do obturador",
+          "detail": "Dor provocada pela rotação interna da coxa flexionada pode apoiar suspeita de irritação pélvica.",
+          "points": 10
+        },
+        {
+          "label": "Sinal de Giordano",
+          "detail": "Sensibilidade à punho-percussão suave do ângulo costovertebral sugere possível acometimento renal.",
+          "points": 10
+        },
+        {
+          "label": "Pesquisa de macicez móvel",
+          "detail": "Mudança da região de macicez à percussão com o decúbito pode sugerir ascite.",
+          "points": 10
+        },
+        {
+          "label": "Manobra de Schuster",
+          "detail": "Posicionamento em decúbito lateral direito para facilitar a palpação do baço quando indicado.",
+          "points": 10
+        }
+      ],
+      "notes": "Selecionar manobras conforme a hipótese clínica, a idade e o conforto da criança; evitar manobras dolorosas desnecessárias. Nenhum sinal isolado confirma apendicite, colecistite, doença renal ou ascite."
     }
   ],
   "r1": [

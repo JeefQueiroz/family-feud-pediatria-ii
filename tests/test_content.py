@@ -14,10 +14,11 @@ class ContentTests(unittest.TestCase):
         self.assertEqual([r['question'] for r in self.data['rounds']],[r['Pergunta'] for r in source])
 
     def test_round_counts(self):
-        self.assertEqual(len(self.data['rounds']),6)
-        self.assertEqual(sum(len(r['answers']) for r in self.data['rounds']),47)
+        self.assertEqual(len(self.data['rounds']),7)
+        self.assertEqual(sum(len(r['answers']) for r in self.data['rounds']),55)
         self.assertEqual(sum(len(r['answers']) for r in self.data['rounds'][:5]),40)
         self.assertEqual(len(self.data['rounds'][5]['answers']),7)
+        self.assertEqual(len(self.data['rounds'][6]['answers']),8)
 
     def test_score_is_ten_per_hit(self):
         self.assertEqual(self.data['pointsPerHit'],10)
@@ -25,7 +26,7 @@ class ContentTests(unittest.TestCase):
             self.assertTrue(3<=len(r['answers'])<=8)
             self.assertTrue(all(a['points']==10 for a in r['answers']))
         self.assertTrue(all(q['points']==10 for q in self.data['r1']))
-        self.assertEqual(sum(a['points'] for r in self.data['rounds'] for a in r['answers']),470)
+        self.assertEqual(sum(a['points'] for r in self.data['rounds'] for a in r['answers']),550)
 
     def test_r1_correct_answers(self):
         self.assertEqual(len(self.data['r1']),5)
