@@ -287,6 +287,11 @@
           "label": "Manobras específicas",
           "detail": "Irritação peritoneal, apendicite, colecistite, ascite e rim, conforme hipótese.",
           "points": 10
+        },
+        {
+          "label": "Avaliação inguinal e pesquisa de hérnias",
+          "detail": "Inspecionar a região inguinal em busca de abaulamentos ou massas, considerando hérnia inguinal e outras causas conforme a queixa clínica.",
+          "points": 10
         }
       ],
       "notes": "Ordem: inspeção → ausculta → percussão → palpação. Acolher a criança, aquecer as mãos e começar longe da região dolorosa. Baço palpável em escolar exige correlação clínica e investigação quando indicado."
