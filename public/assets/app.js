@@ -40,8 +40,9 @@
     try {localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){console.warn('Sem persistência local',e);}
     try {channel?.postMessage({type:'sync',state});}catch(e){console.warn('Canal indisponível',e);}
     render();
+    window.FFRemote?.publish(state);
   }
-  function mutate(fn){if(!isAdmin || !content) return; fn();save();}
+  function mutate(fn){if(!isAdmin || !content || (window.FFRemote?.available() && !window.FFRemote.canControl())) return; fn();save();}
   function receive(next){ if(!content || !next || +next.rev < +state.rev) return; state=normalize(next);render(); }
   function changeRound(i){ mutate(()=>{state.mode='round';state.round=safeIndex(i,content.rounds.length);state.revealed=[];state.strikes=0;state.awarded=false;state.lastAward=null;}); }
   function changeR1(i){ mutate(()=>{state.mode='r1';state.r1=safeIndex(i,content.r1.length);state.strikes=0;state.r1ShowAnswer=false;state.r1Awarded=false;state.lastAward=null;}); }
@@ -85,6 +86,10 @@
   function stage(){return state.mode==='r1'?stageR1():stageRound();}
   function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin)renderAdmin();}
   function renderAdmin(){
+    if(window.FFRemote?.available() && !window.FFRemote.canControl()){
+      window.FFRemote.renderLogin(controlMount);
+      return;
+    }
     const isRound=state.mode==='round', q=isRound?currentRound():currentR1();
     const completed=isRound?state.awarded:state.r1Awarded;
     const canAward=isRound?pot()>0&&!completed:state.r1ShowAnswer&&!completed;
@@ -99,7 +104,9 @@
     <p class="privacy-note">Esta página não exige login. Não divulgue o endereço do painel administrativo sem proteção de acesso.</p>`;
   }
   if(isAdmin){
+    controlMount?.addEventListener('submit',event=>window.FFRemote?.handleSubmit(event));
     controlMount?.addEventListener('click',event=>{
+      if(event.target.closest('[data-auth-logout]')){window.FFRemote?.logout();return;}
       const button=event.target.closest('button[data-action]');if(!button || button.disabled || !content)return;
       const action=button.dataset.action;
       if(action==='mode-round')changeRound(state.round);
@@ -143,6 +150,12 @@
     if('BroadcastChannel' in window){channel=new BroadcastChannel(CHANNEL);channel.addEventListener('message',event=>{if(event.data?.type==='sync')receive(event.data.state);else if(event.data?.type==='request' && isAdmin)channel.postMessage({type:'sync',state});});channel.postMessage({type:'request'});}
     window.addEventListener('storage',event=>{if(event.key===STORAGE && event.newValue){try{receive(JSON.parse(event.newValue));}catch(e){}}});
     render();document.getElementById('connection')?.replaceChildren(document.createTextNode('TV pronta'));
+    window.FFRemote?.connect({
+      isAdmin,
+      onState: remoteState=>{state=normalize(remoteState);try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}render();},
+      onAuth: ()=>render(),
+      onStatus: text=>{const indicator=document.getElementById('connection');if(indicator)indicator.textContent=text;}
+    });
   }catch(e){gameMount.innerHTML=`<div class="waiting">Não foi possível iniciar: ${esc(e.message)}</div>`;console.error(e);}}
   start();
 })();
