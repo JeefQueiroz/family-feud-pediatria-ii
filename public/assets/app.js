@@ -60,9 +60,23 @@
   function receive(next){ if(!content || !next || +next.rev < +state.rev) return; handleRemoteEffects(next);state=normalize(next);tvSnapshotReady=true;render(); }
   function secondsRemaining(){return state.timerRunning?Math.max(0,Math.ceil((state.timerEnd-Date.now())/1000)):state.timerRemaining;}
   function resetClock(){state.timerRunning=false;state.timerEnd=0;state.timerRemaining=10;}
-  function clockStart(){mutate(()=>{if(state.timerRunning)return;const remaining=secondsRemaining();const seconds=remaining>0?remaining:10;state.timerRemaining=seconds;state.timerEnd=Date.now()+seconds*1000;state.timerRunning=true;});}
-  function clockPause(){mutate(()=>{state.timerRemaining=secondsRemaining();state.timerRunning=false;state.timerEnd=0;});}
-  function clockReset(){mutate(()=>resetClock());}
+  function clockStart(){
+    if(state.timerRunning && secondsRemaining()>0)return;
+    mutate(()=>{
+      const remaining=secondsRemaining();
+      const seconds=remaining>0?Math.min(10,remaining):10;
+      state.timerRemaining=seconds;
+      state.timerEnd=Date.now()+seconds*1000;
+      state.timerRunning=true;
+    });
+    updateClockLabels();
+  }
+  function clockPause(){
+    if(!state.timerRunning)return;
+    mutate(()=>{state.timerRemaining=secondsRemaining();state.timerRunning=false;state.timerEnd=0;});
+    updateClockLabels();
+  }
+  function clockReset(){mutate(()=>resetClock());updateClockLabels();}
   function strikeAndSwitch(){mutate(()=>{
     if(state.strikes>=3)return;
     state.strikes=Math.min(3,state.strikes+1);
@@ -119,6 +133,12 @@
     return `<section class="stage"><div class="stage-kicker">QUEM QUER SER UM R1? <span>·</span> DESAFIO ${state.r1+1} / ${content.r1.length}</div><h2 class="stage-question">${esc(q.prompt)}</h2>${scoreMarkup()}<div class="r1-choices">${q.options.map((option,i)=>`<div class="r1-option ${state.r1ShowAnswer && i===q.correct?'correct':''} ${state.r1ShowAnswer && i!==q.correct?'muted':''}"><span class="letter">${'ABCD'[i]}</span><span>${esc(option)}</span>${state.r1ShowAnswer && i===q.correct?'<span class="tick">✓</span>':''}</div>`).join('')}</div><div class="stage-footer">${state.r1ShowAnswer?'<span class="good-answer">GABARITO REVELADO</span>':'<span>ESCOLHAM UMA ALTERNATIVA</span>'}<span>10 PONTOS POR ACERTO</span></div></section>`;}
   function stage(){return state.mode==='r1'?stageR1():stageRound();}
   function updateClockLabels(){
+    if(isAdmin && state.timerRunning && secondsRemaining()===0 && window.FFRemote?.canControl()){
+      state.timerRunning=false;
+      state.timerRemaining=0;
+      state.timerEnd=0;
+      save();
+    }
     document.querySelectorAll('[data-timer-display]').forEach(node=>node.textContent=String(secondsRemaining()));
     if(!isAdmin){
       const tvTimer=document.getElementById('tv-timer-seconds');
