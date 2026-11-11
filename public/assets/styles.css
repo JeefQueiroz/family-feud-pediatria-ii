@@ -5,3 +5,24 @@
 #remote-login label{display:block;margin:12px 0;color:#d8e4f1;font-weight:700;font-size:13px}
 #remote-login input{display:block;width:100%;margin-top:5px;padding:13px;border:1px solid #8ba9bb;border-radius:9px;background:#082844;color:white}
 @media(max-width:660px){.host-answer{min-height:48px;font-size:14px}.control-panel .button{min-height:44px}}
+
+
+/* Tabuleiro e controles lado a lado, adaptados para apresentar no telefone. */
+.presenter-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(340px,.8fr);gap:16px;align-items:start}
+.presenter-board{min-width:0}
+.presenter-board .stage{min-height:600px}
+.presenter-board .stage-question{font-size:clamp(17px,2vw,28px);margin:12px auto;min-height:2.5em}
+.presenter-board .answer-grid{gap:8px}
+.presenter-board .answer-slot{min-height:62px}
+.presenter-board .answer-label{font-size:clamp(11px,1.25vw,16px)}
+.presenter-board .stage-footer{font-size:11px}
+.quick-toolbar{display:grid;gap:10px;margin-bottom:12px;background:#0a1d34;padding:12px;border:1px solid #d6a84f55;border-radius:14px}
+.quick-navigation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.quick-navigation .button{min-height:44px;white-space:normal}
+.quick-team-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.quick-team{display:flex;justify-content:space-between;align-items:center;gap:6px;min-width:0;border:2px solid #49627a;border-radius:12px;background:#123152;color:#e9eff7;font-weight:800;padding:14px;cursor:pointer;touch-action:manipulation}
+.quick-team.active{border-color:var(--green);background:#154c4a;box-shadow:0 0 0 2px #6ac46e40}
+.quick-team strong{font-size:25px;font-variant-numeric:tabular-nums}
+.quick-hint{font-size:12px;color:#c4d3dd;margin:0}
+@media(max-width:1050px){.presenter-layout{grid-template-columns:1fr}.presenter-board .stage{min-height:520px}.presenter-board .answer-label{font-size:clamp(11px,2.2vw,16px)}}
+@media(max-width:660px){.presenter-layout{gap:10px}.quick-navigation{grid-template-columns:repeat(2,minmax(0,1fr))}.quick-team{padding:11px}.presenter-board .stage{min-height:510px}.presenter-board .answer-grid{gap:6px}.presenter-board .answer-slot{min-height:55px!important}.presenter-board .answer-label{font-size:clamp(10px,2.4vw,14px)}}
