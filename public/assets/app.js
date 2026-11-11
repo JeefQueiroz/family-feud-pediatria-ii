@@ -61,11 +61,20 @@
   });}
   function changeRound(i){ mutate(()=>{state.mode='round';state.round=safeIndex(i,content.rounds.length);state.revealed=[];state.strikes=0;state.awarded=false;state.lastAward=null;resetClock();state.activeTeam=1;}); }
   function changeR1(i){ mutate(()=>{state.mode='r1';state.r1=safeIndex(i,content.r1.length);state.strikes=0;state.r1ShowAnswer=false;state.r1Awarded=false;state.lastAward=null;resetClock();state.activeTeam=1;}); }
+  function revealAndScore(i){
+    if(state.mode!=='round'||state.awarded||!Number.isInteger(i)||i<0||i>=currentRound().answers.length||state.revealed.includes(i))return;
+    state.revealed=[...state.revealed,i];
+    const team=state.activeTeam;
+    const amount=points();
+    state['score'+team]+=amount;
+    state.lastAward={team,amount,mode:'round',index:state.round,answer:i};
+    state.strikes=0;
+    resetClock();
+    playSound('correct');
+  }
   function award(team){mutate(()=>{
     if (![1,2].includes(team)) return;
-    if (state.mode==='round' && !state.awarded && pot()>0){
-      const amount=pot(); state['score'+team]+=amount;state.awarded=true;state.lastAward={team,amount,mode:state.mode,index:state.round}; playSound('win');
-    } else if(state.mode==='r1' && state.r1ShowAnswer && !state.r1Awarded){
+    if(state.mode==='r1' && state.r1ShowAnswer && !state.r1Awarded){
       state['score'+team]+=points();state.r1Awarded=true;state.lastAward={team,amount:points(),mode:state.mode,index:state.r1};playSound('win');
     }
   });}
@@ -73,7 +82,7 @@
     const a=state.lastAward;
     if(!a || a.mode!==state.mode || a.index!==(state.mode==='round'?state.round:state.r1))return;
     state['score'+a.team]=Math.max(0,state['score'+a.team]-a.amount);
-    if(a.mode==='round') state.awarded=false;else state.r1Awarded=false;
+    if(a.mode==='round' && Number.isInteger(a.answer))state.revealed=state.revealed.filter(i=>i!==a.answer);else if(a.mode==='r1')state.r1Awarded=false;
     state.lastAward=null;
   });}
   function playSound(which){ if(!soundEnabled)return;
@@ -90,11 +99,11 @@
       });
     }catch(e){ console.warn('Áudio não disponível',e); }
   }
-  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'BANCO DA RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?pot():points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length} · ${state.multiplier}×`:'DESAFIO PRÁTICO'}</div></div><div class="team-score"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
+  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length} · ${state.multiplier}×`:'DESAFIO PRÁTICO'}</div></div><div class="team-score"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
   function stageRound(){const q=currentRound();if(!q)return `<div class="waiting">Sem perguntas aprovadas.</div>`;
     const cards=Array.from({length:8},(_,i)=>{const a=q.answers[i];const revealed=state.revealed.includes(i);
       if(!a) return `<div class="answer-slot empty" aria-hidden="true"></div>`;
-      return `<button class="answer-slot ${revealed?'is-revealed':''} ${isAdmin&&!state.awarded?'clickable':''}" type="button" ${isAdmin&&!state.awarded?`data-answer="${i}"`:'disabled'} aria-label="Resposta ${i+1}, ${revealed?'revelada':'oculta'}"><span class="slot-inner"><span class="slot-front"><b>${i+1}</b></span><span class="slot-back"><span class="answer-label">${esc(a.label)}</span><strong class="answer-points">${a.points}</strong></span></span></button>`;}).join('');
+      return `<button class="answer-slot ${revealed?'is-revealed':''} ${isAdmin&&!state.awarded&&!revealed?'clickable':''}" type="button" ${isAdmin&&!state.awarded&&!revealed?`data-answer="${i}"`:'disabled'} aria-label="Resposta ${i+1}, ${revealed?'revelada':'oculta'}"><span class="slot-inner"><span class="slot-front"><b>${i+1}</b></span><span class="slot-back"><span class="answer-label">${esc(a.label)}</span></span></span></button>`;}).join('');
     return `<section class="stage"><div class="stage-kicker">RODADA ${state.round+1} / ${content.rounds.length} <span>·</span> ${esc(q.title)}</div><h2 class="stage-question">${esc(q.question)}</h2>${scoreMarkup()}<div class="answer-grid">${cards}</div><div class="stage-footer"><span>${state.strikes?`<span class="strikes">${'✕'.repeat(state.strikes)}</span>`:'RESPOSTAS OCULTAS · AGUARDANDO ACERTOS'}</span><span>10 PONTOS POR RESPOSTA</span></div></section>`;}
   function stageR1(){const q=currentR1();if(!q)return `<div class="waiting">Sem desafios.</div>`;
     return `<section class="stage"><div class="stage-kicker">QUEM QUER SER UM R1? <span>·</span> DESAFIO ${state.r1+1} / ${content.r1.length}</div><h2 class="stage-question">${esc(q.prompt)}</h2>${scoreMarkup()}<div class="r1-choices">${q.options.map((option,i)=>`<div class="r1-option ${state.r1ShowAnswer && i===q.correct?'correct':''} ${state.r1ShowAnswer && i!==q.correct?'muted':''}"><span class="letter">${'ABCD'[i]}</span><span>${esc(option)}</span>${state.r1ShowAnswer && i===q.correct?'<span class="tick">✓</span>':''}</div>`).join('')}</div><div class="stage-footer">${state.r1ShowAnswer?'<span class="good-answer">GABARITO REVELADO</span>':'<span>ESCOLHAM UMA ALTERNATIVA</span>'}<span>10 PONTOS POR ACERTO</span></div></section>`;}
@@ -113,15 +122,16 @@
     }
     const isRound=state.mode==='round', q=isRound?currentRound():currentR1();
     const completed=isRound?state.awarded:state.r1Awarded;
-    const canAward=isRound?pot()>0&&!completed:state.r1ShowAnswer&&!completed;
+    const canAward=!isRound&&state.r1ShowAnswer&&!completed;
     controlMount.innerHTML=`<div class="panel-title"><div><div class="eyebrow">CENTRAL DE CONTROLE</div><h2>Painel do apresentador</h2></div><span class="pill">${content.rounds.length} + ${content.r1.length}</span></div>
     ${isRound?'<div class="control-group"><div class="row-heading"><h3>Turno: <span data-team-display></span></h3><span class="pill"><span data-timer-display>10</span> segundos</span></div><div class="button-row"><button class="button primary" data-action="timer-start">Iniciar 10s</button><button class="button secondary" data-action="timer-pause">Pausar</button><button class="button secondary" data-action="timer-reset">Reiniciar</button></div></div>':''}
     <div class="tabs"><button data-action="mode-round" class="${isRound?'active':''}">Family Feud</button><button data-action="mode-r1" class="${!isRound?'active':''}">Quem quer ser um R1?</button></div>
     <div class="control-group"><label class="small-label" for="question-picker">${isRound?'Rodada e tema':'Questão prática'}</label><select id="question-picker" data-select="${isRound?'round':'r1'}">${(isRound?content.rounds:content.r1).map((x,i)=>`<option value="${i}" ${(isRound?state.round:state.r1)===i?'selected':''}>${i+1}. ${esc(x.title)}</option>`).join('')}</select><div class="button-row"><button data-action="prev" class="button secondary">← Anterior</button><button data-action="next" class="button secondary">Próxima →</button></div></div>
+    ${isRound?`<div class="control-group"><div class="row-heading"><h3>Equipe que recebe os pontos</h3><span class="pill">+10 por resposta inédita</span></div><div class="button-row"><button type="button" class="button ${state.activeTeam===1?'primary':'secondary'}" data-action="select-team1" aria-pressed="${state.activeTeam===1}">${esc(state.team1)}</button><button type="button" class="button ${state.activeTeam===2?'primary':'secondary'}" data-action="select-team2" aria-pressed="${state.activeTeam===2}">${esc(state.team2)}</button></div></div>` : ''}
     <div class="control-group"><div class="row-heading"><h3>Equipes</h3><span class="muted-text">Placar acumulado</span></div><div class="team-inputs"><label>Equipe 1<input data-name="team1" maxlength="38" value="${esc(state.team1)}"></label><label>Equipe 2<input data-name="team2" maxlength="38" value="${esc(state.team2)}"></label></div><div class="manual-scores"><div><button class="tiny" data-action="score1-minus">−10</button><b>${state.score1}</b><button class="tiny" data-action="score1-plus">+10</button></div><div><button class="tiny" data-action="score2-minus">−10</button><b>${state.score2}</b><button class="tiny" data-action="score2-plus">+10</button></div></div></div>
-    ${isRound?`<div class="control-group"><div class="row-heading"><h3>Respostas</h3><span class="pill">${validRevealed().length} / ${q.answers.length}</span></div><p class="muted-text">Revele quando a equipe acertar. Cada cartão vale <b>10 pontos</b>.</p><div class="host-answers">${q.answers.map((a,i)=>`<button class="host-answer ${state.revealed.includes(i)?'selected':''}" data-action="answer" data-index="${i}" ${completed?'disabled':''}><span>${i+1}. ${esc(a.label)}</span><b>${state.revealed.includes(i)?'✓ 10':'10'}</b></button>`).join('')}</div><div class="button-row"><button class="button secondary" data-action="reveal-all" ${completed?'disabled':''}>Revelar todas</button><button class="button secondary" data-action="hide-all" ${completed?'disabled':''}>Ocultar todas</button></div></div><div class="control-group"><div class="row-heading"><h3>Multiplicador</h3><span class="muted-text">Somente Family Feud</span></div><div class="multiplier-row">${[1,2,3].map(m=>`<button data-action="multiplier" data-mult="${m}" class="${state.multiplier===m?'active':''}" ${completed?'disabled':''}>${m}×</button>`).join('')}</div><div class="button-row"><button class="button danger" data-action="strike" ${state.strikes>=3?'disabled':''}>Erro ✕ (${state.strikes}/3)</button><button class="button secondary" data-action="clear-strikes">Limpar erros</button></div></div>`:
+    ${isRound?`<div class="control-group"><div class="row-heading"><h3>Respostas</h3><span class="pill">${validRevealed().length} / ${q.answers.length}</span></div><p class="muted-text">Toque em uma resposta oculta para revelá-la e somar 10 pontos à equipe selecionada.</p><div class="host-answers">${q.answers.map((a,i)=>`<button class="host-answer ${state.revealed.includes(i)?'selected':''}" data-action="answer" data-index="${i}" ${completed||state.revealed.includes(i)?'disabled':''}><span>${i+1}. ${esc(a.label)}</span><b>${state.revealed.includes(i)?'✓':'Revelar'}</b></button>`).join('')}</div></div><div class="control-group"><div class="row-heading"><h3>Multiplicador</h3><span class="muted-text">Somente Family Feud</span></div><div class="multiplier-row">${[1,2,3].map(m=>`<button data-action="multiplier" data-mult="${m}" class="${state.multiplier===m?'active':''}" ${completed?'disabled':''}>${m}×</button>`).join('')}</div><div class="button-row"><button class="button danger" data-action="strike" ${state.strikes>=3?'disabled':''}>Erro ✕ (${state.strikes}/3)</button><button class="button secondary" data-action="clear-strikes">Limpar erros</button></div></div>`:
     `<div class="control-group"><h3>Gabarito da questão</h3><p class="muted-text">A equipe escolhe a alternativa. Revele o gabarito somente após as respostas.</p><button class="button ${state.r1ShowAnswer?'secondary':'primary'} full" data-action="show-r1">${state.r1ShowAnswer?'Ocultar gabarito':'Revelar gabarito'}</button><div class="answer-key">Resposta: <b>${'ABCD'[q.correct]} — ${esc(q.options[q.correct])}</b></div><details><summary>Explicação para o apresentador</summary><p>${esc(q.explanation)}</p></details></div>`}
-    <div class="control-group award-group"><h3>Conceder pontos</h3><p class="muted-text">${isRound?`Pontos da rodada: <b>${pot()}</b> (${validRevealed().length} acertos × 10 × ${state.multiplier})`:'Questão prática: 10 pontos quando a equipe acertar.'}</p><div class="button-row"><button data-action="award1" class="button primary" ${!canAward?'disabled':''}>+ ${isRound?pot():10} · ${esc(state.team1)}</button><button data-action="award2" class="button gold" ${!canAward?'disabled':''}>+ ${isRound?pot():10} · ${esc(state.team2)}</button></div><div class="button-row"><button data-action="undo" class="button secondary" ${!state.lastAward?'disabled':''}>Desfazer última premiação</button><button data-action="reset" class="button danger-outline">Zerar placares</button></div>${completed?'<div class="success">Pontuação registrada. Avance para a próxima questão.</div>':''}</div>
+    <div class="control-group award-group"><h3>${isRound?'Correções':'Conceder pontos'}</h3>${!isRound?`<p class="muted-text">Questão prática: 10 pontos quando a equipe acertar.</p><div class="button-row"><button data-action="award1" class="button primary" ${!canAward?'disabled':''}>+10 · ${esc(state.team1)}</button><button data-action="award2" class="button gold" ${!canAward?'disabled':''}>+10 · ${esc(state.team2)}</button></div>`:''}<div class="button-row"><button data-action="undo" class="button secondary" ${!state.lastAward?'disabled':''}>Desfazer último acerto</button><button data-action="reset" class="button danger-outline">Zerar placares</button></div>${completed?'<div class="success">Pontuação registrada. Avance para a próxima questão.</div>':''}</div>
     <details class="notes"><summary>Notas da apresentação</summary><p>${esc(isRound?q.notes:q.explanation)}</p>${isRound?`<ol>${q.answers.map((a)=>`<li><b>${esc(a.label)}</b>: ${esc(a.detail)}</li>`).join('')}</ol>`:''}</details>
     <p class="privacy-note">Esta página não exige login. Não divulgue o endereço do painel administrativo sem proteção de acesso.</p>`;
   }
@@ -135,9 +145,11 @@
       else if(action==='mode-r1')changeR1(state.r1);
       else if(action==='prev')state.mode==='round'?changeRound((state.round+content.rounds.length-1)%content.rounds.length):changeR1((state.r1+content.r1.length-1)%content.r1.length);
       else if(action==='next')state.mode==='round'?changeRound((state.round+1)%content.rounds.length):changeR1((state.r1+1)%content.r1.length);
-      else if(action==='answer')mutate(()=>{if(state.awarded)return;const i=+button.dataset.index;state.revealed=state.revealed.includes(i)?state.revealed.filter(x=>x!==i):[...state.revealed,i];if(state.revealed.includes(i)){state.strikes=0;resetClock();playSound('correct');}});
-      else if(action==='reveal-all')mutate(()=>{if(!state.awarded){state.revealed=currentRound().answers.map((_,i)=>i);state.strikes=0;resetClock();}});
-      else if(action==='hide-all')mutate(()=>{if(!state.awarded)state.revealed=[];});
+      else if(action==='answer')mutate(()=>revealAndScore(+button.dataset.index));
+      else if(action==='select-team1')mutate(()=>state.activeTeam=1);
+      else if(action==='select-team2')mutate(()=>state.activeTeam=2);
+
+
       else if(action==='multiplier')mutate(()=>{if(!state.awarded)state.multiplier=+button.dataset.mult;});
       else if(action==='strike')strikeAndSwitch();
       else if(action==='timer-start')clockStart();
@@ -158,9 +170,9 @@
     controlMount?.addEventListener('input',event=>{const el=event.target;
       if(el.dataset.name){const pos=el.selectionStart;const value=el.value;mutate(()=>state[el.dataset.name]=value.slice(0,38));const field=controlMount.querySelector(`input[data-name="${el.dataset.name}"]`);if(field){field.focus();try{field.setSelectionRange(pos,pos)}catch(e){}}}
     });
-    gameMount?.addEventListener('click',event=>{const b=event.target.closest('button[data-answer]');if(!b || state.mode!=='round'||state.awarded)return;const index=+b.dataset.answer;mutate(()=>{if(!state.revealed.includes(index)){state.strikes=0;resetClock();}state.revealed=state.revealed.includes(index)?state.revealed.filter(x=>x!==index):[...state.revealed,index];});});
+    gameMount?.addEventListener('click',event=>{const b=event.target.closest('button[data-answer]');if(!b||state.mode!=='round')return;mutate(()=>revealAndScore(+b.dataset.answer));});
     document.addEventListener('keydown',event=>{if(!content || event.ctrlKey||event.altKey||event.metaKey||['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;
-      if(state.mode==='round' && /^[1-8]$/.test(event.key)){const i=+event.key-1;if(i<currentRound().answers.length&&!state.awarded)mutate(()=>{if(!state.revealed.includes(i)){state.strikes=0;resetClock();}state.revealed=state.revealed.includes(i)?state.revealed.filter(x=>x!==i):[...state.revealed,i];});}
+      if(state.mode==='round' && /^[1-8]$/.test(event.key)){const i=+event.key-1;if(i<currentRound().answers.length&&!state.awarded)mutate(()=>revealAndScore(i));}
       else if(event.key.toLowerCase()==='x' && state.mode==='round')strikeAndSwitch();
       else if(event.key==='ArrowRight')state.mode==='round'?changeRound((state.round+1)%content.rounds.length):changeR1((state.r1+1)%content.r1.length);
       else if(event.key==='ArrowLeft')state.mode==='round'?changeRound((state.round+content.rounds.length-1)%content.rounds.length):changeR1((state.r1+content.r1.length-1)%content.r1.length);
