@@ -6,9 +6,9 @@
     'sb_publishable_Op4Ywr4x0dlQGphFR0FcfQ_XAYaxPj2',
     { auth: {persistSession:true,autoRefreshToken:true,detectSessionInUrl:true} }
   );
-  let isAdmin=false, authorized=false, version=0, pending=0;
+  let isAdmin=false, authorized=false, version=0, pending=0, pin='';
   let queue=Promise.resolve(), onState=()=>{}, onAuth=()=>{}, onStatus=()=>{};
-  let message='Entre com uma conta autorizada para controlar o jogo.';
+  let message='Digite o PIN de 6 dígitos do apresentador.';
   function status(s){onStatus(s);}
   async function load(){
     if(!client)throw new Error('Biblioteca Supabase não carregou');
@@ -17,14 +17,13 @@
     version=Number(data.version)||0;
     if(!pending && data.payload && Object.keys(data.payload).length)onState(data.payload);
   }
-  async function checkHost(){
-    if(!client || !isAdmin)return;
-    const {data:{user},error}=await client.auth.getUser();
-    if(error||!user){authorized=false;message='Entre com uma conta autorizada para controlar a TV.';onAuth();return;}
-    const access=await client.from('game_hosts').select('user_id').eq('user_id',user.id).maybeSingle();
-    authorized=!!access.data && !access.error;
-    message=authorized?'Apresentador autorizado.':'Conta autenticada, mas ainda sem permissão de apresentador. Autorize o usuário no Supabase.';
-    onAuth();
+  async function requestHost(data){
+    const response=await fetch('https://fngsiatxhqkodcdmdxre.supabase.co/functions/v1/family-feud-host',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),cache:'no-store'
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)throw Error(result.error||'Não foi possível validar o PIN');
+    return result;
   }
   async function connect(config){
     isAdmin=config.isAdmin;onState=config.onState;onAuth=config.onAuth;onStatus=config.onStatus;
@@ -40,8 +39,12 @@
         status('Sincronizado');
       }).subscribe(s=>status(s==='SUBSCRIBED'?'TV conectada':s==='CHANNEL_ERROR'?'Conexão interrompida':'Conectando…'));
       if(isAdmin){
-        client.auth.onAuthStateChange(()=>setTimeout(()=>checkHost().catch(console.error),0));
-        await checkHost();
+        const cached=sessionStorage.getItem('ff-host-pin');
+        if(cached){
+          try{await requestHost({action:'verify',pin:cached});pin=cached;authorized=true;}
+          catch(e){sessionStorage.removeItem('ff-host-pin');message='PIN inválido. Tente novamente.';}
+        }
+        onAuth();
       }
     }catch(e){console.error('Supabase',e);status('Falha de conexão remota');}
   }
@@ -50,11 +53,8 @@
     const snapshot=JSON.parse(JSON.stringify(state));
     pending++;
     queue=queue.catch(()=>{}).then(async()=>{
-      const {data,error}=await client.from('game_live_state')
-        .update({payload:snapshot,version:version+1,updated_at:new Date().toISOString()})
-        .eq('id','main').eq('version',version).select('version');
-      if(error||!data?.length)throw error||new Error('Conflito de atualização');
-      version=Number(data[0].version);
+      const result=await requestHost({action:'publish',pin,state:snapshot,version});
+      version=Number(result.version);
       status('Sincronizado');
     }).catch(async e=>{
       console.error('Falha ao publicar partida',e);
@@ -66,27 +66,17 @@
   }
   const escape=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function renderLogin(mount){
-    mount.innerHTML='<h2>Acesso do apresentador</h2><p class="muted-text">'+escape(message)+'</p>'+
-      '<form id="remote-login"><label>E-mail<input name="email" type="email" autocomplete="email" required></label>'+
-      '<label>Senha<input name="password" type="password" minlength="8" autocomplete="current-password" required></label>'+
-      '<div class="button-row"><button class="button primary" type="submit" data-auth="login">Entrar</button>'+
-      '<button class="button secondary" type="submit" data-auth="signup">Criar conta</button></div></form>'+
-      '<div class="button-row"><button class="button secondary" data-auth-logout type="button">Sair da conta</button></div>'+
-      '<p class="privacy-note">O cadastro não concede acesso automaticamente. O proprietário deve autorizar o usuário em game_hosts. A TV só recebe dados; não pode alterar a partida.</p>';
+    mount.innerHTML='<h2>PIN do apresentador</h2><p class="muted-text">'+escape(message)+'</p>'+
+      '<form id="remote-login"><label>PIN de 6 dígitos<input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label>'+
+      '<div class="button-row"><button class="button primary full" type="submit">Entrar no painel</button></div></form>';
   }
   async function handleSubmit(event){
-    if(event.target.id!=='remote-login'||!client)return;
+    if(event.target.id!=='remote-login')return;
     event.preventDefault();
-    const email=event.target.elements.email.value.trim(),password=event.target.elements.password.value;
-    const signup=event.submitter?.dataset.auth==='signup';
-    message='Autenticando…';onAuth();
-    try{
-      const result=signup?await client.auth.signUp({email,password}):await client.auth.signInWithPassword({email,password});
-      if(result.error)throw result.error;
-      await checkHost();
-      if(signup && !authorized){message='Cadastro enviado. Confirme o e-mail, quando solicitado, e autorize o usuário no Supabase.';onAuth();}
-    }catch(e){message=e.message||'Falha na autenticação';onAuth();}
+    const value=event.target.elements.pin.value.trim();
+    try{await requestHost({action:'verify',pin:value});pin=value;authorized=true;sessionStorage.setItem('ff-host-pin',value);onAuth();}
+    catch(e){message=e.message||'PIN incorreto';onAuth();}
   }
-  async function logout(){if(!client)return;await client.auth.signOut();authorized=false;onAuth();}
+  function logout(){pin='';authorized=false;sessionStorage.removeItem('ff-host-pin');onAuth();}
   window.FFRemote={connect,publish,renderLogin,handleSubmit,logout,canControl:()=>authorized,available:()=>!!client};
 })();
