@@ -12,6 +12,7 @@
   let content = null;
   let audioContext = null;
   let soundEnabled = false;
+  let tvSnapshotReady = false;
   let channel = null;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeIndex = (value, count) => Math.max(0,Math.min(count-1,Number.isInteger(+value)? +value:0));
@@ -48,7 +49,15 @@
     window.FFRemote?.publish(state);
   }
   function mutate(fn){if(!isAdmin || !content || (!window.FFRemote?.available() || !window.FFRemote.canControl())) return; fn();save();}
-  function receive(next){ if(!content || !next || +next.rev < +state.rev) return; state=normalize(next);render(); }
+  function handleRemoteEffects(next){
+    if(isAdmin || !next || !tvSnapshotReady)return;
+    const prior=state;
+    if(next.mode!=='round'||prior.mode!=='round'||next.round!==prior.round)return;
+    const priorAnswers=new Set(Array.isArray(prior.revealed)?prior.revealed:[]);
+    if(Array.isArray(next.revealed) && next.revealed.some(i=>!priorAnswers.has(i)))playSound('correct');
+    else if(Number(next.strikes)>Number(prior.strikes))playSound('wrong');
+  }
+  function receive(next){ if(!content || !next || +next.rev < +state.rev) return; handleRemoteEffects(next);state=normalize(next);tvSnapshotReady=true;render(); }
   function secondsRemaining(){return state.timerRunning?Math.max(0,Math.ceil((state.timerEnd-Date.now())/1000)):state.timerRemaining;}
   function resetClock(){state.timerRunning=false;state.timerEnd=0;state.timerRemaining=10;}
   function clockStart(){mutate(()=>{if(state.timerRunning)return;const remaining=secondsRemaining();const seconds=remaining>0?remaining:10;state.timerRemaining=seconds;state.timerEnd=Date.now()+seconds*1000;state.timerRunning=true;});}
@@ -100,7 +109,7 @@
       });
     }catch(e){ console.warn('Áudio não disponível',e); }
   }
-  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length} · ${state.multiplier}×`:'DESAFIO PRÁTICO'}</div></div><div class="team-score"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
+  function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length} · ${state.multiplier}×`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
   function stageRound(){const q=currentRound();if(!q)return `<div class="waiting">Sem perguntas aprovadas.</div>`;
     const cards=Array.from({length:8},(_,i)=>{const a=q.answers[i];const revealed=state.revealed.includes(i);
       if(!a) return `<div class="answer-slot empty" aria-hidden="true"></div>`;
@@ -111,6 +120,13 @@
   function stage(){return state.mode==='r1'?stageR1():stageRound();}
   function updateClockLabels(){
     document.querySelectorAll('[data-timer-display]').forEach(node=>node.textContent=String(secondsRemaining()));
+    if(!isAdmin){
+      const tvTimer=document.getElementById('tv-timer-seconds');
+      if(tvTimer)tvTimer.textContent=String(secondsRemaining());
+      const turn=document.getElementById('turn-indicator');
+      const name=state.activeTeam===2?state.team2:state.team1;
+      if(turn)turn.textContent='VEZ: '+name;
+    }
     document.querySelectorAll('[data-team-display]').forEach(node=>node.textContent=state.team1 && state.team2 ? (state.activeTeam===1?state.team1:state.team2) : 'Equipe '+state.activeTeam);
   }
   setInterval(updateClockLabels,250);
@@ -200,6 +216,18 @@
       else if(event.key==='ArrowLeft')state.mode==='round'?changeRound((state.round+content.rounds.length-1)%content.rounds.length):changeR1((state.r1+content.r1.length-1)%content.r1.length);
     });
   }
+  if(!isAdmin){
+    const unlockAudio=()=>{
+      soundEnabled=true;
+      try{audioContext ||= new (window.AudioContext||window.webkitAudioContext)();audioContext.resume?.();}catch(e){console.warn('Audio indisponível',e);}
+    };
+    document.addEventListener('pointerdown',unlockAudio,{once:true});
+    document.addEventListener('keydown',unlockAudio,{once:true});
+    document.addEventListener('dblclick',()=>{
+      if(!document.fullscreenElement)document.documentElement.requestFullscreen?.().catch?.(()=>{});
+      else document.exitFullscreen?.().catch?.(()=>{});
+    });
+  }
   document.getElementById('fullscreen-button')?.addEventListener('click',()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();});
   document.getElementById('sound-button')?.addEventListener('click',async e=>{soundEnabled=!soundEnabled;e.currentTarget.textContent=soundEnabled?'Som ativo':'Ativar som';if(soundEnabled)playSound('correct');});
   async function start(){try{
@@ -211,7 +239,7 @@
     render();document.getElementById('connection')?.replaceChildren(document.createTextNode('TV pronta'));
     window.FFRemote?.connect({
       isAdmin,
-      onState: remoteState=>{state=normalize(remoteState);try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}render();},
+      onState: remoteState=>{handleRemoteEffects(remoteState);state=normalize(remoteState);tvSnapshotReady=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}render();},
       onAuth: ()=>render(),
       onStatus: text=>{const indicator=document.getElementById('connection');if(indicator)indicator.textContent=text;}
     });
