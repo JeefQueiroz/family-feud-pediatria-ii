@@ -56,10 +56,7 @@
     render();
     window.FFRemote?.publish(state);
   }
-  function queueEffect(effect){
-    visualEffectQueue.push(effect);
-    playQueuedEffects();
-  }
+  function queueEffect(effect){visualEffectQueue.push(effect);}
   function playQueuedEffects(){
     if(visualEffectPlaying||!visualEffectQueue.length)return;
     visualEffectPlaying=true;
@@ -135,7 +132,7 @@
       lastVisualEffectId=effect.id;
     }
     save();
-    if(effect)queueEffect(effect);
+    if(effect){queueEffect(effect);playQueuedEffects();}
     pendingGameEffect=null;
   }
   function receive(next){
@@ -144,6 +141,7 @@
     state=normalize(next);
     tvSnapshotReady=true;
     render();
+    playQueuedEffects();
   }
   function secondsRemaining(){return state.timerRunning?Math.max(0,Math.ceil((state.timerEnd-Date.now())/1000)):state.timerRemaining;}
   function resetClock(){state.timerRunning=false;state.timerEnd=0;state.timerRemaining=10;}
@@ -246,13 +244,7 @@
     }catch(e){ console.warn('Áudio não disponível',e); }
   }
   function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===1?'just-scored':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length}`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===2?'just-scored':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
-  function effectsMarkup(){
-    if(!pendingGameEffect)return '';
-    const effect=pendingGameEffect;
-    if(effect.kind==='strike')return '<div class="game-effect game-effect-strike" aria-live="polite"><span>✕</span><strong>ERRO!</strong></div>';
-    const name=state['team'+effect.team];
-    return `<div class="game-effect game-effect-award" aria-live="polite"><span>+${effect.amount} PONTOS</span><strong>${esc(name)}</strong></div>`;
-  }
+  function effectsMarkup(){return '';}
   function stageRound(){const q=currentRound();if(!q)return `<div class="waiting">Sem perguntas aprovadas.</div>`;
     const cards=Array.from({length:8},(_,i)=>{const a=q.answers[i];const revealed=state.revealed.includes(i);
       if(!a) return `<div class="answer-slot empty" aria-hidden="true"></div>`;
@@ -396,6 +388,7 @@
         tvSnapshotReady=true;
         try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}
         render();
+        playQueuedEffects();
       },
       onAuth: ()=>render(),
       onStatus: text=>{const indicator=document.getElementById('connection');if(indicator)indicator.textContent=text;}
