@@ -17,13 +17,13 @@
     "title": "Hepatimetria",
     "prompt": "Como avaliar o tamanho do fígado por percussão?",
     "options": [
-      "Percutir exclusivamente hipocôndrio esquerdo",
+      "Percutir exclusivamente o hipocôndrio esquerdo",
       "Delimitar limites superior e inferior da macicez e medir a distância",
-      "Fazer apenas palpação profunda do hipocôndrio direito",
-      "Percutir região umbilical até achar macicez"
+      "Fazer apenas a palpação profunda do hipocôndrio direito",
+      "Percutir a região umbilical até identificar macicez"
     ],
     "correct": 1,
-    "explanation": "Usualmente na linha hemiclavicular direita: marcar limite superior onde som pulmonar vira macicez, inferior onde som abdominal vira macicez; medir distância. Referências devem ser pediátricas."
+    "explanation": "Usualmente na linha hemiclavicular direita: delimitar os limites superior e inferior da macicez hepática e medir a distância entre eles. Referências devem ser pediátricas."
   },
   {
     "id": "r1-03",
