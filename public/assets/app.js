@@ -7,13 +7,17 @@
   const gameMount = document.getElementById('game-mount');
   const controlMount = document.getElementById('control-mount');
   const quickMount = document.getElementById('presenter-quick-controls');
-  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],roundProgress:{},r1Progress:{},strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
+  const initial = () => ({mode:'round',round:0,r1:0,team1:'EQUIPE 1',team2:'EQUIPE 2',score1:0,score2:0,multiplier:1,revealed:[],roundProgress:{},r1Progress:{},effectHistory:[],strikes:0,awarded:false,r1ShowAnswer:false,r1Awarded:false,lastAward:null,activeTeam:1,timerRunning:false,timerEnd:0,timerRemaining:10,rev:0});
   let state = initial();
   let content = null;
   let audioContext = null;
   let soundEnabled = false;
   let tvSnapshotReady = false;
   let pendingGameEffect = null;
+  let lastVisualEffectId = 0;
+  let visualEffectsReady = false;
+  const visualEffectQueue = [];
+  let visualEffectPlaying = false;
   let channel = null;
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeIndex = (value, count) => Math.max(0,Math.min(count-1,Number.isInteger(+value)? +value:0));
@@ -34,6 +38,7 @@
     base.team1=String(base.team1||'EQUIPE 1').slice(0,38);
     base.team2=String(base.team2||'EQUIPE 2').slice(0,38);
     base.revealed=Array.isArray(base.revealed)?base.revealed:[];
+    base.effectHistory=Array.isArray(base.effectHistory)?base.effectHistory.filter(e=>e&&Number.isInteger(e.id)&&e.id>=0&&['award','strike'].includes(e.kind)).slice(-16):[];
     base.roundProgress=base.roundProgress&&typeof base.roundProgress==='object'&&!Array.isArray(base.roundProgress)?base.roundProgress:{};
     base.r1Progress=base.r1Progress&&typeof base.r1Progress==='object'&&!Array.isArray(base.r1Progress)?base.r1Progress:{};
     base.strikes=Math.max(0,Math.min(3,Number(base.strikes)||0));
@@ -51,34 +56,93 @@
     render();
     window.FFRemote?.publish(state);
   }
+  function queueEffect(effect){visualEffectQueue.push(effect);}
+  function playQueuedEffects(){
+    if(visualEffectPlaying||!visualEffectQueue.length)return;
+    visualEffectPlaying=true;
+    const effect=visualEffectQueue.shift();
+    const notice=document.createElement('div');
+    notice.className='game-effect '+(effect.kind==='strike'?'game-effect-strike':'game-effect-award');
+    notice.setAttribute('role','status');
+    const amount=document.createElement('span');
+    amount.textContent=effect.kind==='strike'?'✕':'+'+effect.amount+' PONTOS';
+    const label=document.createElement('strong');
+    label.textContent=effect.kind==='strike'?'ERROU · PRÓXIMA EQUIPE':(effect.teamName||state['team'+effect.team]||'EQUIPE');
+    notice.append(amount,label);
+    document.body.appendChild(notice);
+    if(effect.kind==='award'){
+      const teamCard=document.querySelectorAll('#game-mount .team-score')[effect.team-1];
+      if(teamCard){
+        teamCard.classList.remove('just-scored');
+        void teamCard.offsetWidth;
+        teamCard.classList.add('just-scored');
+      }
+      if(effect.mode==='round'&&state.mode==='round'&&effect.round===state.round&&Number.isInteger(effect.answer)){
+        const card=document.querySelectorAll('#game-mount .answer-slot')[effect.answer];
+        if(card&&card.classList.contains('is-revealed')){
+          card.classList.remove('newly-revealed');
+          void card.offsetWidth;
+          card.classList.add('newly-revealed');
+        }
+      }
+    }
+    if(!isAdmin){
+      if(effect.kind==='strike')playSound('wrong');
+      else playSound('correct');
+    }
+    setTimeout(()=>{
+      notice.remove();
+      visualEffectPlaying=false;
+      playQueuedEffects();
+    },effect.kind==='strike'?1250:1600);
+  }
+  function consumeVisualEffects(incoming){
+    const events=Array.isArray(incoming.effectHistory)?incoming.effectHistory:[];
+    if(!visualEffectsReady){
+      visualEffectsReady=true;
+      lastVisualEffectId=events.reduce((max,e)=>Math.max(max,e.id),0);
+      return;
+    }
+    for(const effect of events){
+      if(effect.id>lastVisualEffectId)queueEffect(effect);
+      lastVisualEffectId=Math.max(lastVisualEffectId,effect.id);
+    }
+  }
   function detectGameEffect(previous,next){
+    pendingGameEffect=null;
     if(!previous||!next)return;
     const team=[1,2].find(n=>Number(next['score'+n])>Number(previous['score'+n]));
     if(team){
       const amount=Number(next['score'+team])-Number(previous['score'+team]);
-      const roundMatched=next.mode==='round'&&previous.mode==='round'&&next.round===previous.round;
-      const newAnswers=roundMatched?(next.revealed||[]).filter(i=>!(previous.revealed||[]).includes(i)):[];
-      pendingGameEffect={kind:'award',team,amount,answer:newAnswers.length===1?newAnswers[0]:null};
+      const sameRound=next.mode==='round'&&previous.mode==='round'&&next.round===previous.round;
+      const revealed=sameRound?(next.revealed||[]).filter(i=>!(previous.revealed||[]).includes(i)):[];
+      pendingGameEffect={kind:'award',team,teamName:next['team'+team],amount,answer:revealed.length===1?revealed[0]:null,mode:next.mode,round:next.round};
     }else if(next.mode==='round'&&previous.mode==='round'&&next.round===previous.round&&Number(next.strikes)>Number(previous.strikes)){
       pendingGameEffect={kind:'strike',strikes:next.strikes};
-    }else pendingGameEffect=null;
+    }
   }
   function mutate(fn){
-    if(!isAdmin||!content||(!window.FFRemote?.available()||!window.FFRemote.canControl()))return;
+    if(!isAdmin||!content||!window.FFRemote?.available()||!window.FFRemote.canControl())return;
     const previous={...state,revealed:[...state.revealed]};
     fn();
     detectGameEffect(previous,state);
+    const effect=pendingGameEffect?{...pendingGameEffect,id:(Number(state.rev)||0)+1}:null;
+    if(effect){
+      state.effectHistory=[...(state.effectHistory||[]),effect].slice(-16);
+      lastVisualEffectId=effect.id;
+    }
     save();
+    if(effect){queueEffect(effect);playQueuedEffects();}
+    pendingGameEffect=null;
   }
-  function handleRemoteEffects(next){
-    if(isAdmin||!next||!tvSnapshotReady)return;
-    detectGameEffect(state,next);
-    if(!pendingGameEffect)return;
-    if(pendingGameEffect.kind==='strike')playSound('wrong');
-    else if(pendingGameEffect.answer!==null)playSound('correct');
-    else playSound('win');
+  function receive(next){
+    if(!content||!next||+next.rev<+state.rev)return;
+    consumeVisualEffects(next);
+    state=normalize(next);
+    tvSnapshotReady=true;
+    render();
+    playQueuedEffects();
   }
-  function receive(next){ if(!content || !next || +next.rev < +state.rev) return; handleRemoteEffects(next);state=normalize(next);tvSnapshotReady=true;render(); }
   function secondsRemaining(){return state.timerRunning?Math.max(0,Math.ceil((state.timerEnd-Date.now())/1000)):state.timerRemaining;}
   function resetClock(){state.timerRunning=false;state.timerEnd=0;state.timerRemaining=10;}
   function clockStart(){
@@ -98,12 +162,22 @@
     updateClockLabels();
   }
   function clockReset(){mutate(()=>resetClock());updateClockLabels();}
-  function strikeAndSwitch(){mutate(()=>{
-    if(state.strikes>=3)return;
-    state.strikes=Math.min(3,state.strikes+1);
-    state.activeTeam=state.activeTeam===1?2:1;
-    resetClock();playSound('wrong');
-  });}
+  function switchTeamAndStartTimer(withStrike){
+    mutate(()=>{
+      if(state.mode!=='round')return;
+      if(withStrike){
+        if(state.strikes>=3)return;
+        state.strikes=Math.min(3,state.strikes+1);
+      }
+      state.activeTeam=state.activeTeam===1?2:1;
+      state.timerRemaining=10;
+      state.timerEnd=Date.now()+10000;
+      state.timerRunning=true;
+    });
+    updateClockLabels();
+  }
+  function strikeAndSwitch(){if(state.strikes<3)switchTeamAndStartTimer(true);}
+  function nextTeam(){switchTeamAndStartTimer(false);}
   function saveCurrentProgress(){
     if(state.mode==='round')state.roundProgress[state.round]=[...state.revealed];
     else state.r1Progress[state.r1]={shown:!!state.r1ShowAnswer,awarded:!!state.r1Awarded};
@@ -170,13 +244,7 @@
     }catch(e){ console.warn('Áudio não disponível',e); }
   }
   function scoreMarkup(){return `<div class="scoreboard"><div class="team-score ${!isAdmin && state.activeTeam===1?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===1?'just-scored':''}"><div class="score-caption">${esc(state.team1)}</div><div class="score-number">${state.score1}</div></div><div class="round-score"><div class="score-caption">${state.mode==='round'?'RODADA':'VALOR DA QUESTÃO'}</div><div class="pot-number">${state.mode==='round'?state.round+1:points()}</div><div class="score-sub">${state.mode==='round'?`ACERTOS ${validRevealed().length}`:'DESAFIO PRÁTICO'}</div></div><div class="team-score ${!isAdmin && state.activeTeam===2?'is-active-team':''} ${pendingGameEffect?.kind==='award'&&pendingGameEffect.team===2?'just-scored':''}"><div class="score-caption">${esc(state.team2)}</div><div class="score-number">${state.score2}</div></div></div>`;}
-  function effectsMarkup(){
-    if(!pendingGameEffect)return '';
-    const effect=pendingGameEffect;
-    if(effect.kind==='strike')return '<div class="game-effect game-effect-strike" aria-live="polite"><span>✕</span><strong>ERRO!</strong></div>';
-    const name=state['team'+effect.team];
-    return `<div class="game-effect game-effect-award" aria-live="polite"><span>+${effect.amount} PONTOS</span><strong>${esc(name)}</strong></div>`;
-  }
+  function effectsMarkup(){return '';}
   function stageRound(){const q=currentRound();if(!q)return `<div class="waiting">Sem perguntas aprovadas.</div>`;
     const cards=Array.from({length:8},(_,i)=>{const a=q.answers[i];const revealed=state.revealed.includes(i);
       if(!a) return `<div class="answer-slot empty" aria-hidden="true"></div>`;
@@ -219,11 +287,11 @@
         <button class="quick-team ${state.activeTeam===1?'active':''}" data-action="select-team1" aria-pressed="${state.activeTeam===1}"><span>${esc(state.team1)}</span><strong>${state.score1}</strong></button>
         <button class="quick-team ${state.activeTeam===2?'active':''}" data-action="select-team2" aria-pressed="${state.activeTeam===2}"><span>${esc(state.team2)}</span><strong>${state.score2}</strong></button>
       </div>
-      ${round?`<div class="quick-strike-row"><button type="button" class="quick-strike-button" data-action="strike" ${state.strikes>=3?'disabled':''}><span class="quick-strike-icon">✕</span><span>ERROU / PASSAR VEZ</span><strong>${state.strikes} / 3</strong></button><span class="quick-strike-explain">Marca erro e alterna para a outra equipe.</span></div>`:''}
+      ${round?`<div class="next-team-row"><button type="button" class="next-team-button" data-action="next-team">PRÓXIMO GRUPO <span>↔</span> INICIAR 10s</button></div><div class="quick-strike-row"><button type="button" class="quick-strike-button" data-action="strike" ${state.strikes>=3?'disabled':''}><span class="quick-strike-icon">✕</span><span>ERROU / PASSAR VEZ</span><strong>${state.strikes} / 3</strong></button><span class="quick-strike-explain">Marca erro, passa a vez e começa 10 segundos.</span></div>`:''}
       <p class="quick-hint">${round?'Selecione a equipe e toque no número de uma resposta oculta. +10 pontos automaticamente.':'Desafio prático: revele o gabarito e conceda os pontos no painel.'}</p>
     </div>`;
   }
-  function render(){if(!content) return;gameMount.innerHTML=stage();if(isAdmin){renderQuickControls();renderAdmin();}pendingGameEffect=null;}
+  function render(){if(!content)return;gameMount.innerHTML=stage();if(isAdmin){renderQuickControls();renderAdmin();}pendingGameEffect=null;}
   function renderAdmin(){
     if(!window.FFRemote?.available() || !window.FFRemote.canControl()){
       if(window.FFRemote) window.FFRemote.renderLogin(controlMount);
@@ -262,6 +330,7 @@
 
 
       else if(action==='strike')strikeAndSwitch();
+      else if(action==='next-team')nextTeam();
       else if(action==='timer-start')clockStart();
       else if(action==='timer-pause')clockPause();
       else if(action==='timer-reset')clockReset();
@@ -313,7 +382,14 @@
     render();document.getElementById('connection')?.replaceChildren(document.createTextNode('TV pronta'));
     window.FFRemote?.connect({
       isAdmin,
-      onState: remoteState=>{handleRemoteEffects(remoteState);state=normalize(remoteState);tvSnapshotReady=true;try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}render();},
+      onState: remoteState=>{
+        consumeVisualEffects(remoteState);
+        state=normalize(remoteState);
+        tvSnapshotReady=true;
+        try{localStorage.setItem(STORAGE,JSON.stringify(state));}catch(e){}
+        render();
+        playQueuedEffects();
+      },
       onAuth: ()=>render(),
       onStatus: text=>{const indicator=document.getElementById('connection');if(indicator)indicator.textContent=text;}
     });

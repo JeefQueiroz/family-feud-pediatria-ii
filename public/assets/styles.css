@@ -89,3 +89,15 @@
 .answer-slot.newly-revealed .slot-back{box-shadow:0 0 30px #9ef3b7,inset 0 0 20px #a6ecc066;border-color:#a8f3a8}
 @keyframes answer-reveal-flip{0%{transform:rotateX(0deg) scale(.95)}45%{transform:rotateX(105deg) scale(1.07)}82%{transform:rotateX(192deg) scale(1.02)}100%{transform:rotateX(180deg) scale(1)}}
 @media(prefers-reduced-motion:reduce){.answer-slot.newly-revealed .slot-inner{animation:none}}
+
+
+/* O próximo grupo inicia imediatamente um turno novo de dez segundos. */
+.next-team-row{width:100%}
+.next-team-button{width:100%;display:flex;justify-content:center;align-items:center;gap:12px;min-height:54px;padding:12px;background:linear-gradient(120deg,#174b79,#166f89);border:2px solid #7dc9e7;border-radius:12px;color:#f0feff;font-weight:950;font-size:clamp(13px,1.5vw,17px);letter-spacing:.045em;cursor:pointer;box-shadow:0 5px 18px #147ca23b;transition:transform .15s,filter .15s}
+.next-team-button:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.next-team-button:active{transform:scale(.985)}
+.next-team-button span{font-size:24px;line-height:1}
+.quick-strike-explain{font-weight:750}
+/* Efeitos fora do tabuleiro para não serem cortados por novas atualizações da TV. */
+body > .game-effect{position:fixed;inset:auto;top:48%;left:50%;z-index:10000;pointer-events:none;max-width:680px}
+@media(prefers-reduced-motion:reduce){.next-team-button{transition:none}}
